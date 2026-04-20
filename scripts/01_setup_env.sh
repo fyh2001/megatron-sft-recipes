@@ -3,7 +3,9 @@
 #   在 GPU 服务器上准备训练环境：
 #   1. 拉基础镜像（默认 NGC PyTorch，可切阿里云 modelscope 镜像）
 #   2. 启动容器，挂载工作区（容器内外同路径）
-#   3. 在容器内装 uv + 建立继承系统包的 venv + uv pip install -e .[gpu]
+#   3. 在容器内装 uv，然后 `uv pip install --system --inexact -e .[gpu]`
+#      直接把业务包装进镜像自带的系统 Python，让 uv 把镜像预装的
+#      torch / TE / apex / flash_attn 视作已满足，避免被依赖链强升 torch。
 #
 # 前置条件：
 #   - 已安装 docker + NVIDIA Container Toolkit
@@ -42,11 +44,10 @@ docker run -d --gpus all \
     -w "${CONTAINER_MOUNT}" \
     "${BASE_IMAGE}" sleep infinity
 
-log "Step 3/3 installing uv + creating venv + uv pip install -e .[gpu]"
+log "Step 3/3 installing uv + uv pip install --system --inexact -e .[gpu]"
 # 把本脚本所需的环境变量通过 `-e` 传进容器 bash
-docker exec -e VENV_DIR="${VENV_DIR}" \
-            -e PYTHON_VERSION="${PYTHON_VERSION}" \
-            -e CONTAINER_MOUNT="${CONTAINER_MOUNT}" \
+docker exec -e CONTAINER_MOUNT="${CONTAINER_MOUNT}" \
+            -e UV_CACHE_DIR="${UV_CACHE_DIR}" \
             "${CONTAINER_NAME}" bash -se <<'INNER_EOF'
 set -euo pipefail
 
@@ -57,21 +58,19 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 uv --version
 
-# 2. 创建 venv 并继承系统 site-packages（关键：继承 NGC 镜像预装的 TE/Apex/FA）
-cd "${CONTAINER_MOUNT}"
-if [ ! -d "${VENV_DIR}" ]; then
-    uv venv "${VENV_DIR}" --python "${PYTHON_VERSION}" --system-site-packages
-fi
+# 2. 直接把业务包装进镜像自带的系统 Python
+#    --system                : 装进容器的系统 site-packages，而不是 venv
+#    --break-system-packages : 绕过 Debian PEP 668 的 EXTERNALLY-MANAGED 标记
+#                              （NGC/modelscope 镜像都带这个标记；容器是一次性的，安全）
+#    --inexact               : 允许保留已装好的系统包（torch / TE / apex / flash_attn）
+#    --editable              : 方便直接改 scripts/ 下 python 代码
+#  关键：--system 让 uv 看到系统里已经装了 torch 2.7（NGC）/ 2.8（modelscope），
+#  依赖解析时把它视作满足 megatron-core 的 `torch>=2.6` 约束，不会去 pypi 重装，
+#  从而保持镜像预装的 TE / apex / flash_attn 的 ABI 兼容性。
+cd "${CONTAINER_MOUNT}/megatron-sft-recipes"
+uv pip install --system --break-system-packages --inexact -e ".[gpu]"
 
-# 3. 激活 venv，装 gpu 可选依赖组
-# shellcheck disable=SC1091
-source "${VENV_DIR}/bin/activate"
-
-# --editable 模式：方便后续直接改 scripts/ 下 python 代码
-# --inexact 允许保留系统 site-packages 里已有的包，不去改动它们
-uv pip install --inexact -e ".[gpu]"
-
-# 4. 验证关键依赖
+# 3. 验证关键依赖（直接用系统 python）
 python <<'PY'
 import importlib, sys
 mods = ['torch', 'swift', 'mcore_bridge', 'megatron.core',
@@ -92,4 +91,4 @@ INNER_EOF
 
 log "Environment ready. Enter the container with:"
 log "  docker exec -it ${CONTAINER_NAME} bash"
-log "  source ${VENV_DIR}/bin/activate"
+log "  # 无需 venv，直接用容器里的 python / megatron 命令"

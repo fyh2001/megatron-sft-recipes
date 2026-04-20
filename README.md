@@ -35,6 +35,7 @@ megatron/
 ## 已完成的工作（Mac 本地）
 
 - 初始化 uv 项目（`pyproject.toml`、`.python-version`、`uv.lock`、`.venv/`）
+  —— Mac 端仍用 venv 跑 02 步数据转换；GPU 容器端不再用 venv（见下文）
 - 执行 `02_convert_data.py` 完成数据转换：
   - 原始 Arrow 19901 条 → 跳过 892 条（无任何 `loss=1` 的 assistant turn）→ 保留 19009 条
   - 按 1% 切分：`train.jsonl` 18819 条 / `valid.jsonl` 190 条
@@ -82,9 +83,15 @@ BASE_IMAGE=modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelsc
 不管选哪个镜像，脚本会完成：
 1. 拉镜像
 2. 启动容器 `swift_sft`，把 `/home/ubuntu/perf_opt` 挂到容器里同名路径
-3. 装 uv + 建立 `/home/ubuntu/perf_opt/.venv`（`--system-site-packages` 继承镜像里的 TE/Apex/FA）
-4. `uv pip install --inexact -e ".[gpu]"` —— `--inexact` 会保留系统已装包（阿里云镜像的 ms-swift 3.10.1 会被升级到 ≥4.1.0，mcore-bridge 等缺失包会被补装）
+3. 装 uv
+4. `uv pip install --system --inexact -e ".[gpu]"` —— **直接装进容器自带的系统 Python**
+   - `--system` 让 uv 把镜像预装的 torch / TE / apex / flash_attn 识别为已满足，
+     避免被 megatron-core 的 `torch>=2.6` 约束触发一次 torch 重装，导致 ABI 失配。
+   - `--inexact` 保留系统已装包不动（阿里云镜像的 ms-swift 3.10.1 会被升级到 ≥4.1.0；
+     mcore-bridge 等缺失包会被补装）。
 5. 自动验证所有关键依赖
+
+> **为什么不用 venv？** `uv venv --system-site-packages + uv pip install --inexact` 在 venv 里做依赖解析时并不会把系统 `dist-packages` 里的 torch 视作已安装，任何声明 `torch>=...` 的依赖（例如 megatron-core）都会让 uv 去 pypi 拉一份新 torch 进 venv，覆盖掉镜像原装 torch 的同时，让为旧 torch 编译的 TE / apex / flash_attn 全线 ABI 失配。改用 `--system` 就绕过这个坑。
 
 首次安装耗时：
 - NGC 镜像：3-5 分钟（ms-swift 生态全新装）
@@ -94,17 +101,16 @@ BASE_IMAGE=modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelsc
 
 ```bash
 docker exec -it swift_sft bash
-cd /home/ubuntu/perf_opt
-source .venv/bin/activate
+# 业务包已在系统 Python 里，不需要 venv，直接跑：
 
 # ---- Qwen2.5-7B SFT ----
-bash scripts/03_sft_qwen25_7b.sh
+bash /home/ubuntu/perf_opt/megatron-sft-recipes/scripts/03_sft_qwen25_7b.sh
 
 # ---- Gemma 4 E4B SFT（换模型只改 --model）----
-bash scripts/04_sft_gemma4_e4b.sh
+bash /home/ubuntu/perf_opt/megatron-sft-recipes/scripts/04_sft_gemma4_e4b.sh
 
 # ---- Gemma 4 31B Dense SFT ----
-bash scripts/05_sft_gemma4_31b.sh
+bash /home/ubuntu/perf_opt/megatron-sft-recipes/scripts/05_sft_gemma4_31b.sh
 ```
 
 ### 3. 推理验证
@@ -166,11 +172,13 @@ OUTPUT_DIR=/home/ubuntu/perf_opt/custom_out \
 
 ## 常见问题
 
-**Q：容器里 `uv pip install` 报 "could not build wheels for apex"**
-A：说明 `--system-site-packages` 没生效。确认 `uv venv` 创建时带了这个 flag：
+**Q：容器里 `uv pip install` 报 "could not build wheels for apex" / "could not build wheels for flash-attn"**
+A：说明 uv 在往 venv 或别处装，没识别到系统 Python 里镜像已预装的版本。必须用 `--system`：
 ```bash
-uv venv /home/ubuntu/perf_opt/.venv --python 3.11 --system-site-packages
+cd /home/ubuntu/perf_opt/megatron-sft-recipes
+uv pip install --system --inexact -e ".[gpu]"
 ```
+如果确实在 venv 路线里踩到这个坑，清掉 venv 重新走 01 脚本即可（`rm -rf .venv && bash scripts/01_setup_env.sh`）。
 
 **Q：训练开始时卡在 "downloading model"**
 A：`MODELSCOPE_CACHE` / `HF_HOME` 指向了非挂载卷，每次重启都要重下。`_common.sh`

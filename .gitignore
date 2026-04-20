@@ -6,6 +6,9 @@ __pycache__/
 
 # 训练产物（大文件）
 sft-data/*.jsonl
+sft-data/*.arrow
+sft-data/dataset_info.json
+sft-data/state.json
 megatron_output/
 *.safetensors
 *.pt
@@ -13,3 +16,6 @@ megatron_output/
 
 # 模型权重本地缓存
 models--*/
+
+# pip editable install 产生的元数据
+*.egg-info/

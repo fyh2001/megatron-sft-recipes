@@ -54,7 +54,7 @@ megatron sft \
     --max_length "${MAX_LEN}" \
     --lr "${LR}" --min_lr "${MIN_LR}" \
     --lr_warmup_fraction 0.05 \
-    --lr_scheduler_type cosine \
+    --lr_decay_style cosine \
     --num_train_epochs "${EPOCHS}" \
     --finetune true \
     --cross_entropy_loss_fusion true \

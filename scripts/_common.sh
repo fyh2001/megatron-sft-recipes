@@ -34,16 +34,28 @@ BASE_IMAGE="${NGC_IMAGE}"   # 统一走 BASE_IMAGE
 # 容器内挂载点：和宿主机保持一致
 : "${CONTAINER_MOUNT:=${HOST_MOUNT}}"
 
-# ===== uv / venv / 缓存 相关 =====
-: "${PYTHON_VERSION:=3.11}"
-# venv 放挂载卷，容器重启不丢
-: "${VENV_DIR:=${CONTAINER_MOUNT}/.venv}"
-# uv 自己的 cache（wheels/source dist），也放挂载卷避免重启重下
+# ===== uv / 缓存 相关 =====
+# 本方案不再使用 venv，直接把业务包装进基础镜像自带的系统 Python。
+# 原因：镜像预装的 transformer_engine / apex / flash_attn 是针对镜像自带 torch
+# 编译的，一旦依赖链（如 megatron-core>=2.6）让 uv 在 venv 里重装 torch，
+# 就会 ABI 失配；而 `uv pip install --system` 能把系统 site-packages 里
+# 已有的 torch/TE/apex/flash_attn 识别为"已满足"，不会被重装。
+# 对应 Python 大版本（仅供排障参考，不用手动指定）：
+#   - NGC nvcr.io/nvidia/pytorch:25.03-py3  → Python 3.12
+#   - 阿里云 modelscope ... py311 ...       → Python 3.11
+#
+# uv 自己的 cache（wheels/source dist），放挂载卷避免容器重启重下
 : "${UV_CACHE_DIR:=${CONTAINER_MOUNT}/.cache/uv}"
 export UV_CACHE_DIR
 
 # ===== 训练路径 =====
-: "${DATA_DIR:=${CONTAINER_MOUNT}/sft-data}"
+# 仓库根目录（scripts/ 的上一级），用来定位随仓库一起同步过来的 sft-data/
+# 这样无论 HOST_MOUNT / CONTAINER_MOUNT 怎么配，sft-data 都跟着仓库走。
+_REPO_ROOT_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+: "${REPO_ROOT:=${_REPO_ROOT_DEFAULT}}"
+unset _REPO_ROOT_DEFAULT
+
+: "${DATA_DIR:=${REPO_ROOT}/sft-data}"
 : "${OUTPUT_ROOT:=${CONTAINER_MOUNT}/megatron_output}"
 : "${TRAIN_JSONL:=${DATA_DIR}/train.jsonl}"
 : "${VALID_JSONL:=${DATA_DIR}/valid.jsonl}"
