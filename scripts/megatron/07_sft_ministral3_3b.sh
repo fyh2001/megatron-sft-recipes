@@ -23,7 +23,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=_common.sh
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 # ===== 数据源配置：走 HF + hf_transfer（Ministral 在 ModelScope 的 CDN 只有 9MB/s；HF 能到 600MB/s） =====
 export USE_HF=1

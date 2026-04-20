@@ -15,7 +15,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=_common.sh
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 : "${MODEL:=LLM-Research/gemma-4-31b-it}"
 : "${TP:=4}"

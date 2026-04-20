@@ -19,7 +19,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=_common.sh
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 : "${OUTPUT_SUB:=qwen25_7b}"
 : "${PROMPT:=你好，请用一句话介绍你自己。}"

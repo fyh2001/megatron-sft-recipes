@@ -1,0 +1,44 @@
+---
+description: SFT Recipes project context and conventions
+globs:
+  - "**"
+alwaysApply: true
+---
+
+# SFT Recipes
+
+Multi-backend SFT training: Megatron (ms-swift) and FSDP2+compile (Accelerate).
+Target hardware: single-node 8×A100/H100 80GB.
+
+## Structure
+```
+scripts/_common.sh          — shared env vars (both backends source this)
+scripts/02_convert_data.py  — data conversion (backend-agnostic)
+scripts/megatron/           — ms-swift + mcore-bridge (TP/PP, heavy deps)
+scripts/fsdp/               — Accelerate + FSDP2 + torch.compile (light deps)
+scripts/fsdp/train.py       — hand-written training loop, the core deliverable
+scripts/benchmark/          — performance comparison tooling
+sft-data/train.jsonl        — 18819 conversations with per-message loss
+pyproject.toml              — uv project: [gpu] for megatron, [fsdp] for FSDP2
+```
+
+## Critical: Per-Message Loss
+Data has `loss: true/false` on each assistant message. The FSDP train.py uses
+incremental tokenization (`apply_chat_template` per message prefix) to build
+exact token-level loss masks. This is the hardest part of the training script.
+
+## Conventions
+- Shell scripts are user-facing entry points
+- All tunables: `: "${VAR:=default}"` in shell → argparse in Python
+- Docker containers: `swift_sft` (Megatron), `fsdp_sft` (FSDP2)
+- System Python in containers (no venv), Mac uses .venv for local data work
+- `uv` for deps, `ruff` for linting (line-length=100)
+- Chinese comments in shell, English in Python
+- No unnecessary abstractions — simple scripts over frameworks
+
+## Tech Stack
+- PyTorch >= 2.6, Accelerate >= 1.4, transformers >= 4.57
+- Flash Attention 2 for attention computation
+- BF16 mixed precision everywhere
+- Cosine LR schedule with warmup and min_lr
+- safetensors checkpoints (HF-compatible)

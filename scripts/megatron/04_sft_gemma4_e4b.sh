@@ -11,7 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=_common.sh
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 # ===== 训练参数 =====
 # Gemma 4 E4B 在 modelscope 上的官方 ID（LLM-Research 是 modelscope 上常用的镜像组织）

@@ -25,7 +25,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 log "Step 1/3 pulling image: ${BASE_IMAGE}"
 docker pull "${BASE_IMAGE}"
@@ -67,7 +67,7 @@ uv --version
 #  关键：--system 让 uv 看到系统里已经装了 torch 2.7（NGC）/ 2.8（modelscope），
 #  依赖解析时把它视作满足 megatron-core 的 `torch>=2.6` 约束，不会去 pypi 重装，
 #  从而保持镜像预装的 TE / apex / flash_attn 的 ABI 兼容性。
-cd "${CONTAINER_MOUNT}/megatron-sft-recipes"
+cd "${REPO_ROOT}"
 uv pip install --system --break-system-packages --inexact -e ".[gpu]"
 
 # 3. 验证关键依赖（直接用系统 python）

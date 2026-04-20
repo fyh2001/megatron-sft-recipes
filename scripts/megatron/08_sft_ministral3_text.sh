@@ -25,7 +25,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=_common.sh
-source "${SCRIPT_DIR}/_common.sh"
+source "${SCRIPT_DIR}/../_common.sh"
 
 # ===== 训练参数（可通过环境变量覆盖）=====
 # H100 80GB × 8 的推荐配比（Ministral-3 3B BF16 + TP=2/PP=1 + distributed optimizer + packing=4096）：

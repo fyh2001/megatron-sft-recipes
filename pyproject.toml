@@ -1,7 +1,7 @@
 [project]
-name = "megatron-sft-pipeline"
-version = "0.1.0"
-description = "ms-swift Megatron SFT pipeline for Qwen2.5 and Gemma 4"
+name = "sft-recipes"
+version = "0.2.0"
+description = "Multi-backend SFT recipes: Megatron (ms-swift) and FSDP2+compile (Accelerate)"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 
@@ -22,6 +22,12 @@ gpu = [
     "modelscope>=1.23",
     "accelerate>=0.30",
     "transformers>=4.57,<5.3",
+]
+fsdp = [
+    "accelerate>=1.4",
+    "transformers>=4.57,<5.3",
+    "datasets>=3.0",
+    "safetensors>=0.4",
 ]
 
 [dependency-groups]
