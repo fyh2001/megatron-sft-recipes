@@ -5,9 +5,25 @@
 # 所有可变参数支持通过环境变量覆盖，例如：
 #   CONTAINER_NAME=my_sft HOST_MOUNT=/srv/megatron bash scripts/01_setup_env.sh
 
-# ===== Docker 相关 =====
-# NGC PyTorch 镜像，自带 PyTorch + CUDA + TE + Apex + FlashAttention
-: "${NGC_IMAGE:=nvcr.io/nvidia/pytorch:25.03-py3}"
+# ===== Docker 镜像 =====
+# 默认用 NGC PyTorch 镜像（海外/NVIDIA 源，自带 TE/Apex/FlashAttention）。
+# 如在国内机器，可切换到阿里云 modelscope 官方镜像（自带 ms-swift 生态），
+# 首次安装会更快（只要覆盖升级 ms-swift 到 ≥4.1.0 满足 Gemma 4 要求）。
+#
+# 候选镜像（任选其一，通过环境变量 BASE_IMAGE=... 覆盖默认值）：
+#   a) NGC PyTorch（默认）:
+#      nvcr.io/nvidia/pytorch:25.03-py3
+#   b) 阿里云 modelscope 杭州:
+#      modelscope-registry.cn-hangzhou.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1
+#   c) 阿里云 modelscope 北京:
+#      modelscope-registry.cn-beijing.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1
+#   d) 阿里云 modelscope 美西（海外直连友好）:
+#      modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1
+: "${BASE_IMAGE:=nvcr.io/nvidia/pytorch:25.03-py3}"
+# 兼容旧变量名
+: "${NGC_IMAGE:=${BASE_IMAGE}}"
+BASE_IMAGE="${NGC_IMAGE}"   # 统一走 BASE_IMAGE
+
 : "${CONTAINER_NAME:=swift_sft}"
 
 # 宿主机工作区路径（包含本仓库及 sft-data/ 等）

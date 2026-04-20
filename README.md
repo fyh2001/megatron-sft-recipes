@@ -58,19 +58,37 @@ rsync -av --exclude='.venv' --exclude='__pycache__' --exclude='.ruff_cache' \
 ### 1. 启动容器 + 安装依赖
 
 ```bash
-# 在 H100 宿主机
+# 在 GPU 宿主机
 cd /home/ubuntu/perf_opt
 bash scripts/01_setup_env.sh
 ```
 
-这一步会：
-1. 拉 `nvcr.io/nvidia/pytorch:25.03-py3`（自带 TE/Apex/FlashAttention）
-2. 启动容器 `swift_sft`，把 `/home/ubuntu/perf_opt` 挂到容器里同名路径
-3. 在容器里装 uv + 建立 `/home/ubuntu/perf_opt/.venv`（`--system-site-packages` 继承 TE/Apex/FA）
-4. `uv pip install -e ".[gpu]"` 装 ms-swift / mcore-bridge 等
-5. 自动验证所有关键依赖可导入
+默认拉 NGC PyTorch 镜像。如果国内机器拉 `nvcr.io` 慢，可切到阿里云 modelscope 镜像：
 
-首次约 3-5 分钟（主要是拉镜像和下载 pip 包）。
+```bash
+# 国内机器推荐：阿里云杭州（modelscope 镜像自带 ms-swift 生态，首次装更快）
+BASE_IMAGE=modelscope-registry.cn-hangzhou.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1 \
+    bash scripts/01_setup_env.sh
+
+# 北京（备用）
+BASE_IMAGE=modelscope-registry.cn-beijing.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1 \
+    bash scripts/01_setup_env.sh
+
+# 海外机器但想避开 nvcr.io：阿里云美西
+BASE_IMAGE=modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1 \
+    bash scripts/01_setup_env.sh
+```
+
+不管选哪个镜像，脚本会完成：
+1. 拉镜像
+2. 启动容器 `swift_sft`，把 `/home/ubuntu/perf_opt` 挂到容器里同名路径
+3. 装 uv + 建立 `/home/ubuntu/perf_opt/.venv`（`--system-site-packages` 继承镜像里的 TE/Apex/FA）
+4. `uv pip install --inexact -e ".[gpu]"` —— `--inexact` 会保留系统已装包（阿里云镜像的 ms-swift 3.10.1 会被升级到 ≥4.1.0，mcore-bridge 等缺失包会被补装）
+5. 自动验证所有关键依赖
+
+首次安装耗时：
+- NGC 镜像：3-5 分钟（ms-swift 生态全新装）
+- 阿里云 modelscope 镜像：1-2 分钟（只升级 ms-swift + 补 mcore-bridge）
 
 ### 2. 进入容器做训练
 

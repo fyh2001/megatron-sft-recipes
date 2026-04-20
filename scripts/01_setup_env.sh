@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 # 01_setup_env.sh
-#   在 H100 服务器上准备训练环境：
-#   1. 拉 NGC PyTorch 镜像（自带 TE/Apex/FlashAttention）
-#   2. 启动容器，挂载工作区到 /home/ubuntu/perf_opt（容器内外同路径）
+#   在 GPU 服务器上准备训练环境：
+#   1. 拉基础镜像（默认 NGC PyTorch，可切阿里云 modelscope 镜像）
+#   2. 启动容器，挂载工作区（容器内外同路径）
 #   3. 在容器内装 uv + 建立继承系统包的 venv + uv pip install -e .[gpu]
 #
 # 前置条件：
 #   - 已安装 docker + NVIDIA Container Toolkit
-#   - 已把整个工作区 rsync 到 GPU 机器，比如 /home/ubuntu/perf_opt
+#   - 已把整个工作区 rsync / clone 到 GPU 机器，例如 /home/ubuntu/perf_opt
 #
 # 用法（在 GPU 机器的宿主机上执行）：
-#   HOST_MOUNT=/home/ubuntu/perf_opt bash scripts/01_setup_env.sh
+#
+#   # 默认：NGC PyTorch 镜像（海外源，自带 TE/Apex/FlashAttention）
+#   bash scripts/01_setup_env.sh
+#
+#   # 切阿里云 us-west-1（海外直连）/ cn-hangzhou / cn-beijing：
+#   BASE_IMAGE=modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.8.1-py311-torch2.8.0-vllm0.11.0-modelscope1.31.0-swift3.10.1 \
+#       bash scripts/01_setup_env.sh
+#
+#   # 改挂载路径：
+#   HOST_MOUNT=/data/megatron bash scripts/01_setup_env.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/_common.sh"
 
-log "Step 1/3 pulling image: ${NGC_IMAGE}"
-docker pull "${NGC_IMAGE}"
+log "Step 1/3 pulling image: ${BASE_IMAGE}"
+docker pull "${BASE_IMAGE}"
 
 log "Step 2/3 (re)starting container: ${CONTAINER_NAME}"
 if docker ps -a --format '{{.Names}}' | grep -qx "${CONTAINER_NAME}"; then
@@ -31,7 +40,7 @@ docker run -d --gpus all \
     --ulimit memlock=-1 --ulimit stack=67108864 \
     -v "${HOST_MOUNT}":"${CONTAINER_MOUNT}" \
     -w "${CONTAINER_MOUNT}" \
-    "${NGC_IMAGE}" sleep infinity
+    "${BASE_IMAGE}" sleep infinity
 
 log "Step 3/3 installing uv + creating venv + uv pip install -e .[gpu]"
 # 把本脚本所需的环境变量通过 `-e` 传进容器 bash
