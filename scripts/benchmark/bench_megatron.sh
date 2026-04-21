@@ -78,8 +78,7 @@ if [ "${USE_MEGATRON_BACKEND}" = "true" ]; then
         --lr 1e-5 --min_lr 1e-6 \
         --lr_warmup_fraction 0.1 \
         --lr_decay_style cosine \
-        --num_train_epochs 999 \
-        --max_steps "${TOTAL_STEPS}" \
+        --train_iters "${TOTAL_STEPS}" \
         --finetune true \
         --cross_entropy_loss_fusion true \
         --recompute_granularity "${RECOMPUTE}" \
@@ -134,7 +133,7 @@ python "${SCRIPT_DIR}/report.py" \
     --train_log "${TRAIN_LOG}" \
     --gpu_log "${GPU_LOG}" \
     --warmup_steps "${WARMUP_BENCH}" \
-    --num_params 12.2e9 \
+    --num_params 7.6e9 \
     --num_gpus "${NPROC_PER_NODE}" \
     --output "${BENCH_OUTPUT}/report.json"
 

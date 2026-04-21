@@ -1,13 +1,23 @@
 compute_environment: LOCAL_MACHINE
 distributed_type: FSDP
 fsdp_config:
+  fsdp_version: 2
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
-  fsdp_sharding_strategy: FULL_SHARD
+  # accelerate validates every class name actually exists on the loaded model,
+  # so we cannot list a catch-all here. Change this line to match the model
+  # you are training (Qwen2DecoderLayer / LlamaDecoderLayer / Gemma3DecoderLayer
+  # / MistralDecoderLayer / Qwen3DecoderLayer / ...).
+  fsdp_transformer_layer_cls_to_wrap: Qwen2DecoderLayer
+  fsdp_reshard_after_forward: true
   fsdp_offload_params: false
-  fsdp_backward_prefetch: BACKWARD_PRE
-  fsdp_forward_prefetch: false
   fsdp_state_dict_type: FULL_STATE_DICT
-  fsdp_cpu_ram_efficient_loading: true
+  # cpu_ram_efficient_loading=false: every rank loads weights from the local
+  # cache in parallel. With transformers 5.x the alternative (true) triggers
+  # a Python-level torch.nn.init.normal_ loop over every parameter on the
+  # non-rank0 processes, which is catastrophically slow for 10B+ models.
+  # sync_module_states=true is still required, otherwise FSDP2 skips the
+  # post-load reshard and each rank keeps a full model replica.
+  fsdp_cpu_ram_efficient_loading: false
   fsdp_sync_module_states: true
   fsdp_activation_checkpointing: false
 mixed_precision: bf16

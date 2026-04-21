@@ -23,6 +23,7 @@ source "${SCRIPT_DIR}/../_common.sh"
 : "${WARMUP_BENCH:=20}"
 : "${COMPILE:=true}"
 : "${GRAD_CKPT:=true}"
+: "${PAD_TO_MAX:=true}"
 
 : "${BENCH_DIR:=${OUTPUT_ROOT}/benchmark}"
 BENCH_OUTPUT="${BENCH_DIR}/fsdp"
@@ -49,10 +50,14 @@ python "${SCRIPT_DIR}/gpu_monitor.py" --output "${GPU_LOG}" &
 GPU_MON_PID=$!
 trap 'kill ${GPU_MON_PID} 2>/dev/null || true' EXIT
 
-COMPILE_FLAG=""
-if [ "${COMPILE}" = "true" ]; then COMPILE_FLAG="--compile"; fi
-GRAD_CKPT_FLAG=""
-if [ "${GRAD_CKPT}" = "true" ]; then GRAD_CKPT_FLAG="--gradient_checkpointing"; fi
+COMPILE_FLAG="--compile"
+if [ "${COMPILE}" = "false" ]; then COMPILE_FLAG="--no_compile"; fi
+GRAD_CKPT_FLAG="--gradient_checkpointing"
+if [ "${GRAD_CKPT}" = "false" ]; then GRAD_CKPT_FLAG="--no_gradient_checkpointing"; fi
+SYNTHETIC_FLAG=""
+if [ "${SYNTHETIC:-false}" = "true" ]; then SYNTHETIC_FLAG="--synthetic"; fi
+PAD_FLAG=""
+if [ "${PAD_TO_MAX}" = "true" ]; then PAD_FLAG="--pad_to_max"; fi
 
 log "Starting training (${TOTAL_STEPS} steps)..."
 
@@ -75,7 +80,7 @@ accelerate launch \
     --benchmark \
     --benchmark_log "${BENCH_LOG}" \
     --warmup_steps_bench "${WARMUP_BENCH}" \
-    ${COMPILE_FLAG} ${GRAD_CKPT_FLAG} \
+    ${COMPILE_FLAG} ${GRAD_CKPT_FLAG} ${SYNTHETIC_FLAG} ${PAD_FLAG} \
     2>&1 | tee "${BENCH_OUTPUT}/train.log"
 
 # 停止 GPU 監控
@@ -89,7 +94,7 @@ python "${SCRIPT_DIR}/report.py" \
     --bench_log "${BENCH_LOG}" \
     --gpu_log "${GPU_LOG}" \
     --warmup_steps "${WARMUP_BENCH}" \
-    --num_params 12.2e9 \
+    --num_params 7.6e9 \
     --num_gpus "${NPROC_PER_NODE}" \
     --output "${BENCH_OUTPUT}/report.json"
 

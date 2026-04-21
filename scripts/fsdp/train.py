@@ -71,6 +71,13 @@ def parse_args() -> argparse.Namespace:
                     help="Stop after N optimizer steps (-1 = run full epochs)")
     p.add_argument("--benchmark", action="store_true",
                     help="Benchmark mode: per-step jsonl metrics, no checkpointing")
+    p.add_argument("--synthetic", action="store_true",
+                    help="Replace ChatDataset with fixed-shape random token batches "
+                         "(for benchmarking without data pipeline overhead).")
+    p.add_argument("--pad_to_max", action="store_true",
+                    help="Pad every batch to --max_length instead of batch-max. "
+                         "Required to keep torch.compile/cudagraphs from "
+                         "recompiling on every new shape.")
     p.add_argument("--benchmark_log", type=str, default=None,
                     help="Path for benchmark jsonl output (default: output_dir/bench.jsonl)")
     p.add_argument("--warmup_steps_bench", type=int, default=20,
@@ -92,46 +99,92 @@ def parse_args() -> argparse.Namespace:
 # Per-message loss masking
 # ---------------------------------------------------------------------------
 
-def build_labels_with_loss_mask(
+def _legacy_build_labels_with_loss_mask(
     messages: list[dict], tokenizer, max_length: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Tokenize a conversation and build per-token loss labels.
-
-    For each message, we tokenize the conversation up to and including that
-    message, then diff against the previous tokenization to identify which
-    new tokens belong to it. Tokens from assistant messages with loss=True
-    get their token id as label; everything else gets -100 (ignored by CE).
-    """
+    """Slow O(N_msg^2) reference implementation, only used when the tokenizer
+    is a slow (Python) tokenizer that cannot return offset_mapping."""
     prev_ids: list[int] = []
-    all_ids: list[int] = []
     all_labels: list[int] = []
 
     for i in range(len(messages)):
         partial_ids = tokenizer.apply_chat_template(
             messages[: i + 1], tokenize=True, add_generation_prompt=False
         )
+        if hasattr(partial_ids, "keys") and "input_ids" in partial_ids.keys():
+            partial_ids = partial_ids["input_ids"]
+        elif hasattr(partial_ids, "ids"):
+            partial_ids = partial_ids.ids
         new_tokens = partial_ids[len(prev_ids):]
 
         msg = messages[i]
-        should_train = (
-            msg["role"] == "assistant" and msg.get("loss") is True
-        )
-
+        should_train = msg["role"] == "assistant" and msg.get("loss") is True
         if should_train:
             all_labels.extend(new_tokens)
         else:
             all_labels.extend([-100] * len(new_tokens))
-
         prev_ids = partial_ids
 
-    all_ids = prev_ids  # final full sequence
-
-    all_ids = all_ids[:max_length]
+    all_ids = prev_ids[:max_length]
     all_labels = all_labels[:max_length]
-
     return (
         torch.tensor(all_ids, dtype=torch.long),
         torch.tensor(all_labels, dtype=torch.long),
+    )
+
+
+def build_labels_with_loss_mask(
+    messages: list[dict], tokenizer, max_length: int
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Tokenize a conversation and build per-token loss labels.
+
+    O(N_msg) implementation:
+      1. Incrementally render the chat template (tokenize=False) per message
+         to obtain each message's character span in the final text.
+      2. Tokenize the full text once with return_offsets_mapping=True.
+      3. Map each token to a span via its char offset; tokens whose owning
+         message is an assistant turn with loss=True get their id as label,
+         others get -100.
+
+    Falls back to the legacy O(N_msg^2) loop for slow tokenizers (no fast
+    backend / no offset_mapping support).
+    """
+    if not getattr(tokenizer, "is_fast", False):
+        return _legacy_build_labels_with_loss_mask(messages, tokenizer, max_length)
+
+    prev_text = ""
+    char_segments: list[tuple[int, int, bool]] = []
+    for i, msg in enumerate(messages):
+        full_text = tokenizer.apply_chat_template(
+            messages[: i + 1], tokenize=False, add_generation_prompt=False
+        )
+        should_train = msg["role"] == "assistant" and msg.get("loss") is True
+        char_segments.append((len(prev_text), len(full_text), should_train))
+        prev_text = full_text
+
+    enc = tokenizer(
+        prev_text,
+        return_offsets_mapping=True,
+        add_special_tokens=False,
+        truncation=True,
+        max_length=max_length,
+    )
+    input_ids = enc["input_ids"]
+    offsets = enc["offset_mapping"]
+
+    labels = [-100] * len(input_ids)
+    seg_idx = 0
+    for ti, (s, _e) in enumerate(offsets):
+        while seg_idx < len(char_segments) and char_segments[seg_idx][1] <= s:
+            seg_idx += 1
+        if seg_idx >= len(char_segments):
+            break
+        if char_segments[seg_idx][2]:
+            labels[ti] = input_ids[ti]
+
+    return (
+        torch.tensor(input_ids, dtype=torch.long),
+        torch.tensor(labels, dtype=torch.long),
     )
 
 
@@ -153,10 +206,34 @@ class ChatDataset(Dataset):
         return {"input_ids": input_ids, "labels": labels}
 
 
+class SyntheticDataset(Dataset):
+    """Fixed-length random token batches, avoids dataloader+tokenization overhead."""
+
+    def __init__(self, num_samples: int, seq_len: int, vocab_size: int, seed: int = 0):
+        self.num_samples = num_samples
+        self.seq_len = seq_len
+        self.vocab_size = vocab_size
+        self._gen = torch.Generator().manual_seed(seed)
+
+    def __len__(self) -> int:
+        return self.num_samples
+
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
+        ids = torch.randint(
+            0, self.vocab_size, (self.seq_len,), generator=self._gen, dtype=torch.long
+        )
+        return {"input_ids": ids, "labels": ids.clone()}
+
+
 def collate_fn(
-    batch: list[dict[str, torch.Tensor]], pad_token_id: int
+    batch: list[dict[str, torch.Tensor]],
+    pad_token_id: int,
+    pad_to_max_length: int | None = None,
 ) -> dict[str, torch.Tensor]:
-    max_len = max(b["input_ids"].size(0) for b in batch)
+    if pad_to_max_length is not None:
+        max_len = pad_to_max_length
+    else:
+        max_len = max(b["input_ids"].size(0) for b in batch)
     input_ids, labels, attention_mask = [], [], []
     for b in batch:
         pad_len = max_len - b["input_ids"].size(0)
@@ -164,11 +241,21 @@ def collate_fn(
         labels.append(F.pad(b["labels"], (0, pad_len), value=-100))
         mask = torch.ones(b["input_ids"].size(0), dtype=torch.long)
         attention_mask.append(F.pad(mask, (0, pad_len), value=0))
-    return {
+    out = {
         "input_ids": torch.stack(input_ids),
         "labels": torch.stack(labels),
         "attention_mask": torch.stack(attention_mask),
     }
+    if pad_to_max_length is not None:
+        # When every batch has identical shape, the attention_mask is
+        # irrelevant for a causal LM: real tokens come first, pad tokens last,
+        # pad positions have labels=-100 (no loss contribution), and causal
+        # masking ensures real tokens cannot attend to trailing pads. Drop the
+        # mask so transformers skips its `.all()` GPU sync in create_causal_mask
+        # (see masking_utils.py flash_attention_mask), which otherwise serializes
+        # the FSDP2 all-gather stream at every forward.
+        out.pop("attention_mask")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +299,10 @@ def debug_tokenization(args):
             partial_ids = tokenizer.apply_chat_template(
                 messages[: i + 1], tokenize=True, add_generation_prompt=False
             )
+            if hasattr(partial_ids, "keys") and "input_ids" in partial_ids.keys():
+                partial_ids = partial_ids["input_ids"]
+            elif hasattr(partial_ids, "ids"):
+                partial_ids = partial_ids.ids
             new_tokens = partial_ids[len(prev_ids):]
             should_train = msg["role"] == "assistant" and msg.get("loss") is True
             total_tokens += len(new_tokens)
@@ -277,12 +368,26 @@ def main():
         if accelerator.is_main_process:
             print(f"Froze {frozen} vision parameters")
 
-    if args.compile:
-        model = torch.compile(model)
+    # NOTE: torch.compile is intentionally deferred until AFTER
+    # accelerator.prepare() so that compile sees the FSDP2 fully_shard unit
+    # boundaries instead of the unwrapped model.
 
     # --- Datasets ---
-    train_dataset = ChatDataset(args.train_file, tokenizer, args.max_length)
-    collate = partial(collate_fn, pad_token_id=tokenizer.pad_token_id)
+    if args.synthetic:
+        vocab = getattr(model.config, "vocab_size", None) or tokenizer.vocab_size
+        train_dataset = SyntheticDataset(
+            num_samples=max(args.max_steps, 100) * args.per_device_train_batch_size
+            * max(args.gradient_accumulation_steps, 1) * 8,
+            seq_len=args.max_length,
+            vocab_size=vocab,
+        )
+    else:
+        train_dataset = ChatDataset(args.train_file, tokenizer, args.max_length)
+    collate = partial(
+        collate_fn,
+        pad_token_id=tokenizer.pad_token_id,
+        pad_to_max_length=args.max_length if args.pad_to_max else None,
+    )
 
     train_loader = DataLoader(
         train_dataset,
@@ -313,6 +418,40 @@ def main():
     model, optimizer, train_loader, scheduler = accelerator.prepare(
         model, optimizer, train_loader, scheduler
     )
+
+    # Diagnostic: confirm FSDP actually sharded the transformer layers.
+    # If wrap policy misfired, this will show 1 unit = the whole model, and
+    # per-rank allocated memory will be full model size instead of ~1/N.
+    if accelerator.is_main_process:
+        fsdp_units = []
+        for name, module in model.named_modules():
+            # FSDP2 marks sharded modules with _fsdp_param_group; FSDP1 uses
+            # FullyShardedDataParallel wrapper class.
+            is_fsdp1 = type(module).__name__ == "FullyShardedDataParallel"
+            is_fsdp2 = getattr(module, "_fsdp_param_group", None) is not None
+            if is_fsdp1 or is_fsdp2:
+                n_params = sum(
+                    p.numel() for p in module.parameters(recurse=False)
+                )
+                fsdp_units.append((name or "<root>", n_params, "fsdp2" if is_fsdp2 else "fsdp1"))
+        print(f"[FSDP diag] total wrap units: {len(fsdp_units)}")
+        for name, n, kind in fsdp_units[:5]:
+            print(f"  {kind}  {name:60s}  own_params={n/1e6:.2f}M")
+        if len(fsdp_units) > 5:
+            print(f"  ... ({len(fsdp_units) - 5} more units)")
+        alloc_gb = torch.cuda.memory_allocated() / 1024**3
+        reserved_gb = torch.cuda.memory_reserved() / 1024**3
+        print(
+            f"[FSDP diag] rank0 GPU mem after prepare: "
+            f"allocated={alloc_gb:.2f} GB  reserved={reserved_gb:.2f} GB"
+        )
+
+    if args.compile:
+        # FSDP2 + compile: wrap AFTER accelerator.prepare so torch.compile
+        # specializes per fully_shard unit. dynamic=True avoids re-compiling
+        # on every new sequence-length shape (combined with --pad_to_max,
+        # this should keep compile cost to a one-shot warm-up).
+        model = torch.compile(model, dynamic=True)
 
     if accelerator.is_main_process:
         gbs = (
@@ -369,7 +508,10 @@ def main():
 
             global_step += 1
             step_time_ms = (time.time() - step_t0) * 1000
-            step_tokens = (batch["attention_mask"] == 1).sum().item()
+            if "attention_mask" in batch:
+                step_tokens = (batch["attention_mask"] == 1).sum().item()
+            else:
+                step_tokens = batch["input_ids"].numel()
             log_loss_accum += loss.detach().float().item()
             log_token_accum += step_tokens
 

@@ -52,34 +52,46 @@ def parse_fsdp_bench_log(path: str, warmup_steps: int) -> list[dict]:
     return steps
 
 
-def parse_megatron_train_log(path: str, warmup_steps: int) -> list[dict]:
+def parse_megatron_train_log(
+    path: str, warmup_steps: int, tokens_per_step: int | None = None
+) -> list[dict]:
     """Parse Megatron/swift training log for per-step metrics.
 
-    Megatron-core logs lines like:
-        [2024-xx-xx] iteration      25/ ... elapsed time per iteration (ms): 2640.3 ...
-    ms-swift (HF backend) logs:
-        {'loss': 2.341, 'grad_norm': ..., 'learning_rate': ..., 'epoch': 0.01}
-        or: step=25 ... loss=2.341 ... tok/s=12450
+    Supports three log formats:
+      * megatron-core:
+          [...] iteration 25/... elapsed time per iteration (ms): 2640.3 ...
+      * ms-swift megatron (dict printed every logging_steps iters):
+          {'loss': ..., 'iteration': '25/50', 'elapsed_time': '23s',
+           'train_speed(s/it)': 1.14, ...}
+      * HF trainer (swift sft HF backend):
+          {'loss': 2.341, 'grad_norm': ..., 'epoch': 0.01}
+          or: step=25 ... loss=2.341 ... tok/s=12450
+
+    For the swift megatron format, step_time_ms for each iteration in a block
+    (N1, N2] is derived from elapsed_time deltas between consecutive logged
+    dicts. If ``tokens_per_step`` is provided, each parsed step is annotated
+    with tokens count for throughput/MFU computation.
     """
     steps = []
     step_num = 0
 
-    # Pattern for megatron-core iteration log
     mcore_pat = re.compile(
         r"iteration\s+(\d+)/.*?elapsed time per iteration \(ms\):\s*([\d.]+)"
     )
-    # Pattern for megatron-core tokens-per-sec
     tps_pat = re.compile(r"tokens-per-sec(?:-per-gpu)?:\s*([\d.]+)")
-    # Pattern for HF trainer {'loss': ..., ...} dicts
     hf_dict_pat = re.compile(r"\{'loss':\s*([\d.]+).*?'epoch':\s*([\d.]+)")
-    # Pattern for custom step= log format
     step_log_pat = re.compile(
         r"step=\s*(\d+).*?loss=([\d.]+).*?tok/s=([\d.]+)"
     )
+    swift_iter_pat = re.compile(r"'iteration':\s*'(\d+)/(\d+)'")
+    swift_elapsed_pat = re.compile(r"'elapsed_time':\s*'(\d+(?:\.\d+)?)s'")
+    swift_memory_pat = re.compile(r"'memory\(GiB\)':\s*([\d.]+)")
+    swift_loss_pat = re.compile(r"'loss':\s*([\d.]+)")
+
+    swift_log_points: list[tuple[int, float, float | None, float | None]] = []
 
     with open(path) as f:
         for line in f:
-            # Try megatron-core format
             m = mcore_pat.search(line)
             if m:
                 step_num = int(m.group(1))
@@ -89,30 +101,68 @@ def parse_megatron_train_log(path: str, warmup_steps: int) -> list[dict]:
                     tps_m = tps_pat.search(line)
                     if tps_m:
                         entry["tokens_per_sec_per_gpu"] = float(tps_m.group(1))
+                    if tokens_per_step is not None:
+                        entry.setdefault("tokens", tokens_per_step)
                     steps.append(entry)
                 continue
 
-            # Try HF trainer format (swift sft logs)
+            sm = swift_iter_pat.search(line)
+            if sm:
+                n = int(sm.group(1))
+                em = swift_elapsed_pat.search(line)
+                if not em:
+                    continue
+                elapsed = float(em.group(1))
+                lm = swift_loss_pat.search(line)
+                loss = float(lm.group(1)) if lm else None
+                mm = swift_memory_pat.search(line)
+                mem = float(mm.group(1)) if mm else None
+                swift_log_points.append((n, elapsed, loss, mem))
+                continue
+
             m = hf_dict_pat.search(line)
             if m:
                 step_num += 1
                 if step_num > warmup_steps:
-                    steps.append({
-                        "step": step_num,
-                        "loss": float(m.group(1)),
-                    })
+                    entry = {"step": step_num, "loss": float(m.group(1))}
+                    if tokens_per_step is not None:
+                        entry["tokens"] = tokens_per_step
+                    steps.append(entry)
                 continue
 
-            # Try step= format
             m = step_log_pat.search(line)
             if m:
                 s = int(m.group(1))
                 if s > warmup_steps:
-                    steps.append({
+                    entry = {
                         "step": s,
                         "loss": float(m.group(2)),
                         "tokens_per_sec": float(m.group(3)),
-                    })
+                    }
+                    if tokens_per_step is not None:
+                        entry["tokens"] = tokens_per_step
+                    steps.append(entry)
+
+    if swift_log_points and not steps:
+        swift_log_points.sort()
+        prev_n, prev_t = 0, 0.0
+        for n, elapsed, loss, mem in swift_log_points:
+            block_iters = n - prev_n
+            block_sec = max(elapsed - prev_t, 0.0)
+            if block_iters > 0:
+                per_step_ms = block_sec * 1000.0 / block_iters
+                for step in range(prev_n + 1, n + 1):
+                    if step <= warmup_steps:
+                        continue
+                    entry = {"step": step, "step_time_ms": per_step_ms}
+                    if loss is not None and step == n:
+                        entry["loss"] = loss
+                    if mem is not None:
+                        entry["peak_mem_gb_from_log"] = mem
+                    if tokens_per_step is not None:
+                        entry["tokens"] = tokens_per_step
+                    steps.append(entry)
+            prev_n, prev_t = n, elapsed
 
     return steps
 
@@ -333,6 +383,11 @@ def main():
     parser.add_argument("--output", type=str, default=None)
     parser.add_argument("--fsdp_dir", type=str, default=None)
     parser.add_argument("--megatron_dir", type=str, default=None)
+    parser.add_argument(
+        "--tokens_per_step", type=int, default=None,
+        help="Fallback tokens/step for Megatron logs that lack token counts "
+             "(e.g. GBS*max_length when packing=true).",
+    )
 
     args = parser.parse_args()
 
@@ -353,7 +408,8 @@ def main():
         )
 
         mega_steps = parse_megatron_train_log(
-            os.path.join(mega_dir, "train.log"), args.warmup_steps
+            os.path.join(mega_dir, "train.log"), args.warmup_steps,
+            tokens_per_step=args.tokens_per_step,
         )
         mega_gpu = compute_gpu_stats(
             parse_gpu_log(os.path.join(mega_dir, "gpu_metrics.jsonl"))
@@ -382,7 +438,9 @@ def main():
         train_log = args.train_log
         if not train_log:
             parser.error("--train_log required for Megatron")
-        steps = parse_megatron_train_log(train_log, args.warmup_steps)
+        steps = parse_megatron_train_log(
+            train_log, args.warmup_steps, tokens_per_step=args.tokens_per_step
+        )
 
     gpu_records = parse_gpu_log(args.gpu_log) if args.gpu_log else []
     gpu_stats = compute_gpu_stats(gpu_records)
