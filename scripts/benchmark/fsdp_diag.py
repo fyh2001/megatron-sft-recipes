@@ -22,6 +22,7 @@ Usage::
 from __future__ import annotations
 
 import os
+import sys
 
 import torch
 from accelerate import Accelerator
@@ -33,10 +34,14 @@ def fmt_bytes(nbytes: int) -> str:
 
 
 def main() -> None:
-    model_path = os.environ.get(
-        "MODEL",
-        "/home/ubuntu/perf_opt/.cache/modelscope/models/Qwen/Qwen2___5-14B-Instruct",
-    )
+    model_path = os.environ.get("MODEL")
+    if not model_path:
+        print(
+            "ERROR: set the MODEL env var to an HF hub id or a local model path, "
+            "e.g. MODEL=Qwen/Qwen2.5-7B-Instruct accelerate launch ... fsdp_diag.py",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     acc = Accelerator(mixed_precision="bf16")
     rank = acc.process_index

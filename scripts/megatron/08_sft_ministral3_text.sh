@@ -37,7 +37,10 @@ source "${SCRIPT_DIR}/../_common.sh"
 #   Ministral vocab=131072 比 Qwen2.5 的 152064 小 14%，CE OOM 压力小一些，
 #   但 TP=1 + MBS=4 仍可能撞顶；保守用 TP=2。
 # GBS=64 与 Qwen 脚本对齐；DP=4/MBS=4 → accum=4。
-: "${MODEL:=/home/ubuntu/perf_opt/models/ministral3-3b-text-llama}"
+# 默认指向 convert_ministral3_to_llama.py 的默认输出位置；
+# _common.sh 的 HOST_MOUNT 已动态按仓库路径推导，老部署仍可 HOST_MOUNT=/home/ubuntu/perf_opt 覆盖。
+: "${MODELS_DIR:=${HOST_MOUNT}/models}"
+: "${MODEL:=${MODELS_DIR}/ministral3-3b-text-llama}"
 : "${TP:=2}"
 : "${PP:=1}"
 : "${MBS:=4}"

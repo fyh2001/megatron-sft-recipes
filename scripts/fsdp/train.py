@@ -83,6 +83,16 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--warmup_steps_bench", type=int, default=20,
                     help="Steps to skip before measuring in benchmark mode")
 
+    # nsys profiling. Paired with `nsys profile --capture-range=cudaProfilerApi`
+    # in bench_fsdp.sh PROFILE=true mode, so the resulting nsys-rep only
+    # contains the requested [start, end) step window (~5 steps ~1.8s
+    # instead of 150s of the full run).
+    p.add_argument("--profile", action="store_true",
+                    help="Emit cudaProfilerStart()/Stop() around the step window "
+                         "[--profile_start_step, --profile_end_step).")
+    p.add_argument("--profile_start_step", type=int, default=5)
+    p.add_argument("--profile_end_step", type=int, default=9)
+
     args = p.parse_args()
     if args.no_compile:
         args.compile = False
@@ -118,7 +128,13 @@ def _legacy_build_labels_with_loss_mask(
         new_tokens = partial_ids[len(prev_ids):]
 
         msg = messages[i]
-        should_train = msg["role"] == "assistant" and msg.get("loss") is True
+        # `loss` in the jsonl is a loss WEIGHT / MASK, not a strict bool:
+        # ms-swift's chatml schema puts float 1.0 (train this turn) or 0.0
+        # (skip). Old code tested `is True`, which never matched float 1.0
+        # and silently masked every assistant turn -> CE over all -100
+        # -> NaN loss. Truthy check handles 1.0 / True / positive weights;
+        # 0.0 / None / False stays masked as intended.
+        should_train = msg["role"] == "assistant" and bool(msg.get("loss"))
         if should_train:
             all_labels.extend(new_tokens)
         else:
@@ -158,7 +174,9 @@ def build_labels_with_loss_mask(
         full_text = tokenizer.apply_chat_template(
             messages[: i + 1], tokenize=False, add_generation_prompt=False
         )
-        should_train = msg["role"] == "assistant" and msg.get("loss") is True
+        # See note in _legacy_build_labels_with_loss_mask: jsonl `loss`
+        # field is a float weight (1.0 train / 0.0 skip), not a bool.
+        should_train = msg["role"] == "assistant" and bool(msg.get("loss"))
         char_segments.append((len(prev_text), len(full_text), should_train))
         prev_text = full_text
 
@@ -304,7 +322,7 @@ def debug_tokenization(args):
             elif hasattr(partial_ids, "ids"):
                 partial_ids = partial_ids.ids
             new_tokens = partial_ids[len(prev_ids):]
-            should_train = msg["role"] == "assistant" and msg.get("loss") is True
+            should_train = msg["role"] == "assistant" and bool(msg.get("loss"))
             total_tokens += len(new_tokens)
             if should_train:
                 train_tokens += len(new_tokens)
@@ -334,10 +352,15 @@ def main():
         debug_tokenization(args)
         return
 
-    accelerator = Accelerator(
-        mixed_precision="bf16",
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-    )
+    # NOTE: do NOT pass gradient_accumulation_steps here. On accelerate 1.13 +
+    # FSDP2 + transformers 5.x, the GradientAccumulationPlugin installed by
+    # that kwarg causes the post-prepare rank0 allocation to land at full
+    # model size (15.96 GB on Qwen2.5-7B) instead of the sharded 1.77 GB
+    # that fsdp_diag.py sees with the same config but without GAS. The
+    # grad-accum semantics we actually use are driven entirely by the outer
+    # `accelerator.accumulate(model)` context manager below, which does NOT
+    # depend on this constructor arg being set.
+    accelerator = Accelerator(mixed_precision="bf16")
     set_seed(args.seed)
 
     if accelerator.is_main_process:
@@ -354,10 +377,29 @@ def main():
         attn_implementation=args.attn_implementation,
     )
 
-    if args.gradient_checkpointing:
+
+    # Activation checkpointing:
+    #   * When the accelerate FSDP config has `fsdp_activation_checkpointing:
+    #     true`, accelerate installs torch.distributed's
+    #     `apply_activation_checkpointing` inside `accelerator.prepare()`,
+    #     AFTER the decoder layers have been wrapped with `fully_shard`. This
+    #     is the correct order for FSDP2: sharding first, ckpt wrapper second.
+    #   * Transformers' own `model.gradient_checkpointing_enable()` rewrites
+    #     module internals BEFORE prepare. With TRANSFORMER_BASED_WRAP matching
+    #     on `Qwen2DecoderLayer`, this changes the module layout enough that
+    #     accelerate's auto_wrap policy no longer matches any layer, FSDP falls
+    #     back to per-leaf sharding (or no sharding), and you end up with a
+    #     full model replica per rank + an all_gather storm.
+    # So: only run the transformers path when accelerate's FSDP config is NOT
+    # taking care of it.
+    _fsdp_plugin = getattr(accelerator.state, "fsdp_plugin", None)
+    _fsdp_acx = bool(getattr(_fsdp_plugin, "activation_checkpointing", False))
+    if args.gradient_checkpointing and not _fsdp_acx:
         model.gradient_checkpointing_enable(
             gradient_checkpointing_kwargs={"use_reentrant": False}
         )
+    elif args.gradient_checkpointing and accelerator.is_main_process:
+        print("[train] gradient_checkpointing handled by FSDP2 plugin")
 
     if args.freeze_vision:
         frozen = 0
@@ -399,9 +441,24 @@ def main():
     )
 
     # --- Optimizer + scheduler ---
-    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    # CRITICAL: pass a GENERATOR to AdamW, do NOT pre-materialize a list into a
+    # named local. On accelerate 1.13 + FSDP2 the `fully_shard` inside
+    # `accelerator.prepare()` only physically reshards a parameter if it is
+    # the sole external holder of the pre-shard tensor; any additional Python
+    # strong reference (e.g. `trainable_params = [p for p in ...]`) keeps the
+    # full tensor alive on every rank and prepare silently degrades to "mark
+    # DTensor on the parameter but skip the memory reshard".
+    # Symptom when this regression slips back: rank0 allocated == full model
+    # size (15.96 GB for Qwen2.5-7B instead of 1.77 GB = 14/8), first training
+    # step hangs forever because every decoder layer issues a full-model
+    # all_gather that never completes. See scripts/benchmark/fsdp_diag.py for
+    # the known-good post-prepare baseline.
+    # AdamW consumes the generator into its own internal list inside
+    # param_groups; that list is the only external holder when prepare() runs.
     optimizer = torch.optim.AdamW(
-        trainable_params, lr=args.learning_rate, weight_decay=args.weight_decay
+        (p for p in model.parameters() if p.requires_grad),
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay,
     )
 
     steps_per_epoch = math.ceil(
@@ -420,25 +477,42 @@ def main():
     )
 
     # Diagnostic: confirm FSDP actually sharded the transformer layers.
-    # If wrap policy misfired, this will show 1 unit = the whole model, and
-    # per-rank allocated memory will be full model size instead of ~1/N.
+    # If wrap policy misfired, wrap_units will be 0/1 and rank0 allocated
+    # memory will be full model size instead of ~1/N. Use the same checks as
+    # scripts/benchmark/fsdp_diag.py: FSDP2 marks modules with the FSDPModule
+    # mixin, FSDP1 wraps them in FullyShardedDataParallel; parameters on
+    # sharded modules become DTensor.
     if accelerator.is_main_process:
+        try:
+            from torch.distributed.fsdp import FSDPModule as _FSDPModule
+        except Exception:
+            _FSDPModule = None
+        from torch.distributed.tensor import DTensor as _DTensor
+
         fsdp_units = []
         for name, module in model.named_modules():
-            # FSDP2 marks sharded modules with _fsdp_param_group; FSDP1 uses
-            # FullyShardedDataParallel wrapper class.
             is_fsdp1 = type(module).__name__ == "FullyShardedDataParallel"
-            is_fsdp2 = getattr(module, "_fsdp_param_group", None) is not None
+            is_fsdp2 = _FSDPModule is not None and isinstance(module, _FSDPModule)
             if is_fsdp1 or is_fsdp2:
                 n_params = sum(
                     p.numel() for p in module.parameters(recurse=False)
                 )
                 fsdp_units.append((name or "<root>", n_params, "fsdp2" if is_fsdp2 else "fsdp1"))
+
+        dtensor_params = sum(
+            1 for _, p in model.named_parameters() if isinstance(p, _DTensor)
+        )
+        total_params = sum(1 for _ in model.named_parameters())
+
         print(f"[FSDP diag] total wrap units: {len(fsdp_units)}")
         for name, n, kind in fsdp_units[:5]:
             print(f"  {kind}  {name:60s}  own_params={n/1e6:.2f}M")
         if len(fsdp_units) > 5:
             print(f"  ... ({len(fsdp_units) - 5} more units)")
+        print(
+            f"[FSDP diag] DTensor params: {dtensor_params}/{total_params} "
+            f"(0 means nothing was sharded)"
+        )
         alloc_gb = torch.cuda.memory_allocated() / 1024**3
         reserved_gb = torch.cuda.memory_reserved() / 1024**3
         print(
@@ -484,11 +558,24 @@ def main():
         bench_file = open(args.benchmark_log, "w")
 
     done = False
+    # nsys profiling control: start right BEFORE the chosen step begins its
+    # forward, stop right AFTER the chosen end step's optimizer.step. Gates
+    # on `--profile` so non-profile runs skip the syscall.
+    _nsys_started = False
     for epoch in range(args.num_train_epochs):
         if done:
             break
         model.train()
         for _step, batch in enumerate(train_loader):
+            if (
+                args.profile
+                and not _nsys_started
+                and global_step + 1 == args.profile_start_step
+            ):
+                torch.cuda.synchronize()
+                torch.cuda.cudart().cudaProfilerStart()
+                _nsys_started = True
+
             with accelerator.accumulate(model):
                 outputs = model(**batch)
                 loss = outputs.loss
@@ -507,6 +594,16 @@ def main():
                 continue
 
             global_step += 1
+            if (
+                args.profile
+                and _nsys_started
+                and global_step >= args.profile_end_step
+            ):
+                torch.cuda.synchronize()
+                torch.cuda.cudart().cudaProfilerStop()
+                _nsys_started = False  # don't call Stop twice
+                # Keep training so nsys has time to flush the buffer on app
+                # exit; TOTAL_STEPS should already be small (e.g. 12).
             step_time_ms = (time.time() - step_t0) * 1000
             if "attention_mask" in batch:
                 step_tokens = (batch["attention_mask"] == 1).sum().item()
@@ -515,18 +612,32 @@ def main():
             log_loss_accum += loss.detach().float().item()
             log_token_accum += step_tokens
 
-            # Benchmark per-step logging
-            if args.benchmark and accelerator.is_main_process:
-                total_tokens = accelerator.gather(
-                    torch.tensor([step_tokens], device=accelerator.device)
-                ).sum().item() if accelerator.num_processes > 1 else step_tokens
-                bench_file.write(json.dumps({
-                    "step": global_step,
-                    "step_time_ms": round(step_time_ms, 2),
-                    "tokens": int(total_tokens),
-                    "loss": round(loss.detach().float().item(), 4),
-                }) + "\n")
-                bench_file.flush()
+            # Benchmark per-step logging.
+            # CRITICAL: accelerator.gather() is a COLLECTIVE (all_gather under
+            # the hood). Every rank must call it or the collective hangs
+            # forever. The previous code wrapped this inside
+            # `if accelerator.is_main_process:`, which silently deadlocked on
+            # multi-rank runs: rank 0 blocked in gather waiting for peers,
+            # peers meanwhile tried to start step N+1's FSDP per-layer
+            # all_gathers that needed rank 0 to participate, and both ends
+            # waited on each other. Symptom: every rank pinned at 100% util
+            # 120 W (NCCL polling) and bench.jsonl stayed empty.
+            if args.benchmark:
+                if accelerator.num_processes > 1:
+                    total_tokens_t = accelerator.gather(
+                        torch.tensor([step_tokens], device=accelerator.device)
+                    )
+                    total_tokens = int(total_tokens_t.sum().item())
+                else:
+                    total_tokens = step_tokens
+                if accelerator.is_main_process:
+                    bench_file.write(json.dumps({
+                        "step": global_step,
+                        "step_time_ms": round(step_time_ms, 2),
+                        "tokens": total_tokens,
+                        "loss": round(loss.detach().float().item(), 4),
+                    }) + "\n")
+                    bench_file.flush()
 
             step_t0 = time.time()
 

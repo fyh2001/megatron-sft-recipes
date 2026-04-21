@@ -42,9 +42,23 @@ mkdir -p "${BENCH_OUTPUT}"
 GPU_LOG="${BENCH_OUTPUT}/gpu_metrics.jsonl"
 TRAIN_LOG="${BENCH_OUTPUT}/train.log"
 
+# ===== 动态 num_params =====
+# 以前写死 7.6e9（Qwen2.5-7B），换模型必错。现在跑 _inspect_model.py 在
+# meta-device 上构建模型、数 params，几百毫秒就能出准确值。
+# 支持 NUM_PARAMS 环境变量显式覆盖（用于还没支持 AutoConfig 的冷门模型）。
+if [ -z "${NUM_PARAMS:-}" ]; then
+    SCRIPT_BENCH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    log "Introspecting model to derive num_params..."
+    _INSPECT_OUT="$(python "${SCRIPT_BENCH_DIR}/_inspect_model.py" "${MODEL}")"
+    eval "${_INSPECT_OUT}"
+    log "Model info:"
+    printf '%s\n' "${_INSPECT_OUT}" | sed 's/^/  /'
+fi
+
 log "=== Megatron / ms-swift Benchmark ==="
 printf '  %-22s = %s\n' \
     model "${MODEL}" \
+    num_params "${NUM_PARAMS}" \
     backend "${USE_MEGATRON_BACKEND}" \
     TP/PP "${TP}/${PP}" \
     MBS/GBS "${MBS}/${GBS}" \
@@ -59,12 +73,40 @@ python "${SCRIPT_DIR}/gpu_monitor.py" --output "${GPU_LOG}" &
 GPU_MON_PID=$!
 trap 'kill ${GPU_MON_PID} 2>/dev/null || true' EXIT
 
+# PROFILE=true wraps the training command under `nsys profile`. Megatron
+# does not expose cudaProfilerStart/Stop hooks, so we rely on nsys's
+# --delay/--duration (in seconds) to only record a time window in which
+# training is at steady state (after compile + dataset packing).
+: "${PROFILE:=false}"
+: "${PROFILE_DELAY:=110}"
+: "${PROFILE_DURATION:=5}"
+NSYS_BIN="/opt/nvidia/nsight-compute/2025.2.1/host/target-linux-x64/nsys"
+LAUNCH_PREFIX=""
+if [ "${PROFILE}" = "true" ]; then
+    if [ ! -x "${NSYS_BIN}" ]; then
+        log "ERROR: nsys not found at ${NSYS_BIN}; set NSYS_BIN env var." >&2
+        exit 2
+    fi
+    # --trace-fork-before-exec=true: swift → megatron sft → torchrun fork
+    # chain, nsys only sees the rank subprocesses if this is enabled.
+    LAUNCH_PREFIX="${NSYS_BIN} profile \
+        --trace=cuda,nvtx,cublas,cudnn \
+        --trace-fork-before-exec=true \
+        --cuda-memory-usage=false \
+        --sample=none \
+        --delay=${PROFILE_DELAY} \
+        --duration=${PROFILE_DURATION} \
+        --output=${BENCH_OUTPUT}/profile.nsys-rep \
+        --force-overwrite=true"
+    log "nsys profiling enabled, delay=${PROFILE_DELAY}s duration=${PROFILE_DURATION}s"
+fi
+
 log "Starting training (${TOTAL_STEPS} steps)..."
 
 if [ "${USE_MEGATRON_BACKEND}" = "true" ]; then
     # Megatron 后端（需要模型在 mcore-bridge 的支持列表里）
     NPROC_PER_NODE="${NPROC_PER_NODE}" \
-    megatron sft \
+    ${LAUNCH_PREFIX} megatron sft \
         --model "${MODEL}" \
         --dataset "${TRAIN_JSONL}" \
         --save_safetensors true \
@@ -97,7 +139,7 @@ else
     if [ "${GAS}" -lt 1 ]; then GAS=1; fi
 
     NPROC_PER_NODE="${NPROC_PER_NODE}" \
-    swift sft \
+    ${LAUNCH_PREFIX} swift sft \
         --model "${MODEL}" \
         --tuner_type full \
         --dataset "${TRAIN_JSONL}" \
@@ -128,13 +170,18 @@ wait ${GPU_MON_PID} 2>/dev/null || true
 
 log "Benchmark complete. Generating report..."
 
+# packing + fixed MAX_LEN 下每步吞吐的 token 数是 GBS * MAX_LEN；
+# ms-swift megatron 日志里只有 iteration / elapsed_time / train_speed，不直接给 tokens。
+TOKENS_PER_STEP=$(( GBS * MAX_LEN ))
+
 python "${SCRIPT_DIR}/report.py" \
     --framework megatron \
     --train_log "${TRAIN_LOG}" \
     --gpu_log "${GPU_LOG}" \
     --warmup_steps "${WARMUP_BENCH}" \
-    --num_params 7.6e9 \
+    --num_params "${NUM_PARAMS}" \
     --num_gpus "${NPROC_PER_NODE}" \
+    --tokens_per_step "${TOKENS_PER_STEP}" \
     --output "${BENCH_OUTPUT}/report.json"
 
 log "Report saved to ${BENCH_OUTPUT}/report.json"

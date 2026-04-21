@@ -26,10 +26,21 @@ BASE_IMAGE="${NGC_IMAGE}"   # 统一走 BASE_IMAGE
 
 : "${CONTAINER_NAME:=swift_sft}"
 
+# ===== 仓库根目录（提前解析，后面的默认值都参考它）=====
+# 通过 BASH_SOURCE 反推本文件所在目录的上一级，这样不管仓库 clone 到
+# /home/ubuntu/perf_opt/megatron-sft-recipes 还是 /home/ubuntu/fyh/megatron-sft-recipes
+# 还是 /srv/whatever/megatron-sft-recipes，REPO_ROOT 都能正确解析。
+_REPO_ROOT_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+: "${REPO_ROOT:=${_REPO_ROOT_DEFAULT}}"
+unset _REPO_ROOT_DEFAULT
+
 # 宿主机工作区路径（包含本仓库及 sft-data/ 等）
-# 设计：宿主机和容器挂载使用同一绝对路径，方便容器内外互操作
-# 覆盖示例：HOST_MOUNT=/srv/other_path bash scripts/01_setup_env.sh
-: "${HOST_MOUNT:=/home/ubuntu/perf_opt}"
+# 设计：宿主机和容器挂载使用同一绝对路径，方便容器内外互操作。
+# 默认取 REPO_ROOT 的父目录，这样 -v ${HOST_MOUNT}:${HOST_MOUNT} 一定能在
+# 容器里看到当前仓库。旧布局 HOST_MOUNT=/home/ubuntu/perf_opt 也仍然有效，
+# 只需 export HOST_MOUNT 覆盖即可。
+# 覆盖示例：HOST_MOUNT=/srv/other_path bash scripts/fsdp/setup_env.sh
+: "${HOST_MOUNT:=$(dirname "${REPO_ROOT}")}"
 
 # 容器内挂载点：和宿主机保持一致
 : "${CONTAINER_MOUNT:=${HOST_MOUNT}}"
@@ -49,13 +60,21 @@ BASE_IMAGE="${NGC_IMAGE}"   # 统一走 BASE_IMAGE
 export UV_CACHE_DIR
 
 # ===== 训练路径 =====
-# 仓库根目录（scripts/ 的上一级），用来定位随仓库一起同步过来的 sft-data/
-# 这样无论 HOST_MOUNT / CONTAINER_MOUNT 怎么配，sft-data 都跟着仓库走。
-_REPO_ROOT_DEFAULT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-: "${REPO_ROOT:=${_REPO_ROOT_DEFAULT}}"
-unset _REPO_ROOT_DEFAULT
+# DATA_DIR 按以下优先级选：
+#   1. 环境变量显式设置
+#   2. 仓库内 sft-data/（02_convert_data.py 的默认产物位置）
+#   3. HOST_MOUNT/data（旧部署常见布局，train.jsonl 直接放在挂载根下）
+# 这样不改代码在新机器就能用老数据。
+if [ -z "${DATA_DIR:-}" ]; then
+    if [ -d "${REPO_ROOT}/sft-data" ]; then
+        DATA_DIR="${REPO_ROOT}/sft-data"
+    elif [ -f "${HOST_MOUNT}/data/train.jsonl" ]; then
+        DATA_DIR="${HOST_MOUNT}/data"
+    else
+        DATA_DIR="${REPO_ROOT}/sft-data"
+    fi
+fi
 
-: "${DATA_DIR:=${REPO_ROOT}/sft-data}"
 : "${OUTPUT_ROOT:=${CONTAINER_MOUNT}/megatron_output}"
 : "${TRAIN_JSONL:=${DATA_DIR}/train.jsonl}"
 : "${VALID_JSONL:=${DATA_DIR}/valid.jsonl}"
@@ -68,6 +87,15 @@ export MODELSCOPE_CACHE HF_HOME
 
 # ===== 训练通用环境 =====
 export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
+# CUDA_DEVICE_MAX_CONNECTIONS=1 is the Megatron-required setting for correct
+# tensor-parallel overlap. For FSDP (pure data-parallel with param sharding)
+# this is catastrophic: it serialises every CUDA stream onto one connection,
+# so all the per-layer NCCL all_gathers + compute kernels queue up behind
+# each other instead of overlapping. Observed symptom: 100% GPU util at
+# only ~120 W/card on H100 (vs 500+ W during real matmul) and the first
+# training step never finishes.
+# bench_fsdp.sh / sft_*.sh under scripts/fsdp/ override this back to 8 after
+# sourcing _common.sh. Scripts under scripts/megatron/ keep the =1 default.
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
 # 默认 8 卡，可被子脚本覆盖

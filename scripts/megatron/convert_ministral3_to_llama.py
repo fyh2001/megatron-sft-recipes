@@ -21,10 +21,11 @@
 
 用法：
   python scripts/convert_ministral3_to_llama.py \
-      --src  /home/ubuntu/perf_opt/.cache/huggingface/hub/models--mistralai--Ministral-3-3B-Instruct-2512-BF16/snapshots/<hash> \
-      --dst  /home/ubuntu/perf_opt/models/ministral3-3b-text-llama
+      --src  $HF_HOME/hub/models--mistralai--Ministral-3-3B-Instruct-2512-BF16/snapshots/<hash> \
+      --dst  $HOST_MOUNT/models/ministral3-3b-text-llama
 
 若 --src 省略，自动从 HF cache 里找最新的 Ministral-3-3B-Instruct-2512-BF16 snapshot。
+HF cache 位置取 $HF_HOME (默认 ~/.cache/huggingface)，兼容旧部署。
 """
 from __future__ import annotations
 
@@ -33,18 +34,30 @@ import glob
 import json
 import os
 import shutil
-import sys
 
 LM_PREFIX = "language_model."
 STRIPPED_PREFIXES = ("vision_tower.", "multi_modal_projector.")
 
 
+def _hf_hub_dir() -> str:
+    # Respect the standard HF env vars; fall back to the per-user default.
+    hf_home = os.environ.get("HF_HOME") or os.path.join(
+        os.path.expanduser("~"), ".cache", "huggingface"
+    )
+    return os.path.join(hf_home, "hub")
+
+
 def find_default_src() -> str:
-    pattern = "/home/ubuntu/perf_opt/.cache/huggingface/hub/models--mistralai--Ministral-3-3B-Instruct-2512-BF16/snapshots/*"
+    pattern = os.path.join(
+        _hf_hub_dir(),
+        "models--mistralai--Ministral-3-3B-Instruct-2512-BF16",
+        "snapshots",
+        "*",
+    )
     matches = glob.glob(pattern)
     if not matches:
         raise FileNotFoundError(
-            f"Could not find Ministral-3-3B-Instruct-2512-BF16 snapshot under HF cache. "
+            f"Could not find Ministral-3-3B-Instruct-2512-BF16 snapshot under {pattern}. "
             f"Pass --src explicitly."
         )
     return max(matches, key=os.path.getmtime)
@@ -102,7 +115,6 @@ def rename_weight_key(old: str) -> str | None:
 
 def convert_weights(src_dir: str, dst_dir: str) -> tuple[int, int, int]:
     """Walk safetensors shards, rename keys, re-shard uniformly, update index."""
-    import safetensors
     from safetensors import safe_open
     from safetensors.torch import save_file
 
@@ -189,7 +201,19 @@ def copy_tokenizer_files(src_dir: str, dst_dir: str) -> list[str]:
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", default=None, help="Source snapshot dir (default: auto-detect from HF cache)")
-    ap.add_argument("--dst", default="/home/ubuntu/perf_opt/models/ministral3-3b-text-llama")
+    ap.add_argument(
+        "--dst",
+        default=os.environ.get(
+            "MINISTRAL3_LLAMA_DST",
+            os.path.join(
+                os.environ.get("HOST_MOUNT", os.path.expanduser("~")),
+                "models",
+                "ministral3-3b-text-llama",
+            ),
+        ),
+        help="Destination dir (default: $HOST_MOUNT/models/ministral3-3b-text-llama, "
+             "override with MINISTRAL3_LLAMA_DST env var or --dst).",
+    )
     args = ap.parse_args()
 
     src = args.src or find_default_src()
@@ -211,13 +235,13 @@ def main():
     print(f"[tokenizer] copied: {copied}")
 
     # 3. 权重
-    print(f"[weights] rewriting safetensors shards ...")
+    print("[weights] rewriting safetensors shards ...")
     n_kept, n_dropped, total_bytes = convert_weights(src, dst)
     print(f"[weights] kept={n_kept}, dropped={n_dropped}, total={total_bytes/1e9:.2f} GB")
 
     print()
     print(f"[done] new model at: {dst}")
-    print(f"       quick sanity:")
+    print("       quick sanity:")
     print(f"         python -c 'from transformers import AutoModelForCausalLM, AutoTokenizer; "
           f"m = AutoModelForCausalLM.from_pretrained(\"{dst}\", dtype=\"bfloat16\"); "
           f"print(sum(p.numel() for p in m.parameters())/1e9, \"B params\")'")

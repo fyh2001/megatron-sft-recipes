@@ -16,7 +16,10 @@ source "${SCRIPT_DIR}/../_common.sh"
 
 # ===== 训练参数 =====
 # 纯文本 3B 模型，H100 80GB × 8 非常宽裕。
-: "${MODEL:=/home/ubuntu/perf_opt/models/ministral3-3b-text-llama}"
+# MODEL 默认指向 convert_ministral3_to_llama.py 的默认输出位置，
+# 按 _common.sh 里 HOST_MOUNT 动态推导（老机器上就是 /home/ubuntu/perf_opt）。
+: "${MODELS_DIR:=${HOST_MOUNT}/models}"
+: "${MODEL:=${MODELS_DIR}/ministral3-3b-text-llama}"
 : "${MBS:=4}"
 : "${GAS:=2}"
 : "${LR:=1e-5}"

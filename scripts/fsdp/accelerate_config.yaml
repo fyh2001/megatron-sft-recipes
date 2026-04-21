@@ -3,10 +3,15 @@ distributed_type: FSDP
 fsdp_config:
   fsdp_version: 2
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
-  # accelerate validates every class name actually exists on the loaded model,
-  # so we cannot list a catch-all here. Change this line to match the model
-  # you are training (Qwen2DecoderLayer / LlamaDecoderLayer / Gemma3DecoderLayer
-  # / MistralDecoderLayer / Qwen3DecoderLayer / ...).
+  # NOTE: accelerate validates this class name against the loaded model, so a
+  # catch-all list is not accepted. For bench runs this value is overwritten
+  # at launch time by scripts/benchmark/bench_fsdp.sh via _inspect_model.py
+  # (renders a per-run accelerate_config.rendered.yaml), so the literal value
+  # here is only the fallback for direct `accelerate launch --config_file
+  # accelerate_config.yaml ...` calls. Adjust to match the model you are
+  # training directly (Qwen2DecoderLayer / LlamaDecoderLayer /
+  # Gemma3DecoderLayer / MistralDecoderLayer / Ministral3DecoderLayer /
+  # Qwen3DecoderLayer / ...).
   fsdp_transformer_layer_cls_to_wrap: Qwen2DecoderLayer
   fsdp_reshard_after_forward: true
   fsdp_offload_params: false
@@ -19,7 +24,14 @@ fsdp_config:
   # post-load reshard and each rank keeps a full model replica.
   fsdp_cpu_ram_efficient_loading: false
   fsdp_sync_module_states: true
-  fsdp_activation_checkpointing: false
+  # Let accelerate install activation checkpointing AFTER fully_shard has
+  # wrapped each decoder layer. The transformers-level
+  # `model.gradient_checkpointing_enable()` path wraps layers in a way that
+  # makes TRANSFORMER_BASED_WRAP miss `Qwen2DecoderLayer` at prepare time,
+  # leaving every parameter full-size on every rank (observed 14 GB allocated
+  # rank0 on 7.6B instead of 1.8 GB). train.py only calls
+  # gradient_checkpointing_enable when this is false.
+  fsdp_activation_checkpointing: true
 mixed_precision: bf16
 num_processes: 8
 main_training_function: main
