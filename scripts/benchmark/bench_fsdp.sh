@@ -33,6 +33,23 @@ export CUDA_DEVICE_MAX_CONNECTIONS=8
 # Useful knob for debugging FSDP2+compile stalls that might come from the
 # flash_attn varlen/padding-free path interacting badly with DTensor.
 : "${ATTN_IMPL:=flash_attention_2}"
+# VLM backbones (e.g. Qwen3.5-9B) ship a vision tower we don't want to train
+# in text-only SFT. When true, train.py zeros requires_grad on any parameter
+# whose name contains "vision"/"visual"/"projector".
+: "${FREEZE_VISION:=false}"
+
+# Activation checkpointing has two implementation paths inside this repo:
+#   (a) accelerate FSDP2 plugin -- fsdp_activation_checkpointing: true in the
+#       rendered yaml. Preferred when it works, because it wraps ckpt AFTER
+#       fully_shard inside accelerator.prepare(), preserving TRANSFORMER_BASED_WRAP.
+#   (b) transformers-native model.gradient_checkpointing_enable() -- used when
+#       the FSDP plugin path triggers the known flash_attn_2 + Qwen2 KV
+#       CheckpointError metadata mismatch (see docs/benchmark_result.md §4.3
+#       item 5). Fires BEFORE accelerator.prepare(); in recent transformers
+#       the module rewrite is benign to FSDP_AUTO_WRAP by class name.
+# Default: follow GRAD_CKPT (plugin path). Users can override to FSDP_ACX=false
+# + GRAD_CKPT=true to force the transformers-native escape hatch.
+: "${FSDP_ACX:=${GRAD_CKPT}}"
 
 : "${BENCH_DIR:=${OUTPUT_ROOT}/benchmark}"
 BENCH_OUTPUT="${BENCH_DIR}/fsdp"
@@ -75,7 +92,7 @@ fi
 RENDERED_ACCEL_CFG="${BENCH_OUTPUT}/accelerate_config.rendered.yaml"
 sed -E \
     -e "s|^([[:space:]]*fsdp_transformer_layer_cls_to_wrap:[[:space:]]*).*|\\1${FSDP_WRAP_CLS}|" \
-    -e "s|^([[:space:]]*fsdp_activation_checkpointing:[[:space:]]*).*|\\1${GRAD_CKPT}|" \
+    -e "s|^([[:space:]]*fsdp_activation_checkpointing:[[:space:]]*).*|\\1${FSDP_ACX}|" \
     "${SCRIPT_DIR}/../fsdp/accelerate_config.yaml" > "${RENDERED_ACCEL_CFG}"
 
 log "=== FSDP2 + compile Benchmark ==="
@@ -104,6 +121,8 @@ SYNTHETIC_FLAG=""
 if [ "${SYNTHETIC:-false}" = "true" ]; then SYNTHETIC_FLAG="--synthetic"; fi
 PAD_FLAG=""
 if [ "${PAD_TO_MAX}" = "true" ]; then PAD_FLAG="--pad_to_max"; fi
+FREEZE_VISION_FLAG=""
+if [ "${FREEZE_VISION}" = "true" ]; then FREEZE_VISION_FLAG="--freeze_vision"; fi
 
 # PROFILE=true wraps accelerate launch under `nsys profile` with capture
 # controlled by cudaProfilerStart/Stop from train.py (see --profile flag
@@ -162,7 +181,7 @@ ${LAUNCH_PREFIX} accelerate launch \
     --benchmark_log "${BENCH_LOG}" \
     --warmup_steps_bench "${WARMUP_BENCH}" \
     --attn_implementation "${ATTN_IMPL}" \
-    ${COMPILE_FLAG} ${GRAD_CKPT_FLAG} ${SYNTHETIC_FLAG} ${PAD_FLAG} ${PROFILE_FLAG} \
+    ${COMPILE_FLAG} ${GRAD_CKPT_FLAG} ${SYNTHETIC_FLAG} ${PAD_FLAG} ${FREEZE_VISION_FLAG} ${PROFILE_FLAG} \
     2>&1 | tee "${BENCH_OUTPUT}/train.log"
 
 # 停止 GPU 監控

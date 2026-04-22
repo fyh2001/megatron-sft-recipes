@@ -34,6 +34,16 @@ source "${SCRIPT_DIR}/../_common.sh"
 : "${TOTAL_STEPS:=50}"
 : "${WARMUP_BENCH:=20}"
 : "${RECOMPUTE:=selective}"
+# When RECOMPUTE=full, mcore requires a --recompute_method (block / uniform)
+# and --recompute_num_layers N. Defaults here match ms-swift's upstream
+# qwen3_next/mcore.sh recipe: uniform across all layers, N=1 layer per group
+# (most aggressive memory savings). Only applied when RECOMPUTE=full.
+: "${RECOMPUTE_METHOD:=uniform}"
+: "${RECOMPUTE_NUM_LAYERS:=1}"
+# For VLM backbones (Qwen3.5-9B, etc.), freeze the vision tower + aligner so
+# only the text backbone is trained. ms-swift's `megatron sft` path honours
+# --freeze_vit / --freeze_aligner; the swift sft (HF backend) branch ignores.
+: "${FREEZE_VIT:=false}"
 
 : "${BENCH_DIR:=${OUTPUT_ROOT}/benchmark}"
 BENCH_OUTPUT="${BENCH_DIR}/megatron"
@@ -103,6 +113,16 @@ fi
 
 log "Starting training (${TOTAL_STEPS} steps)..."
 
+FREEZE_VIT_ARGS=""
+if [ "${FREEZE_VIT}" = "true" ]; then
+    FREEZE_VIT_ARGS="--freeze_vit true --freeze_aligner true"
+fi
+
+RECOMPUTE_METHOD_ARGS=""
+if [ "${RECOMPUTE}" = "full" ]; then
+    RECOMPUTE_METHOD_ARGS="--recompute_method ${RECOMPUTE_METHOD} --recompute_num_layers ${RECOMPUTE_NUM_LAYERS}"
+fi
+
 if [ "${USE_MEGATRON_BACKEND}" = "true" ]; then
     # Megatron 后端（需要模型在 mcore-bridge 的支持列表里）
     NPROC_PER_NODE="${NPROC_PER_NODE}" \
@@ -124,9 +144,11 @@ if [ "${USE_MEGATRON_BACKEND}" = "true" ]; then
         --finetune true \
         --cross_entropy_loss_fusion true \
         --recompute_granularity "${RECOMPUTE}" \
+        ${RECOMPUTE_METHOD_ARGS} \
         --use_distributed_optimizer true \
         --overlap_grad_reduce true \
         --overlap_param_gather true \
+        ${FREEZE_VIT_ARGS} \
         --output_dir "${BENCH_OUTPUT}/ckpt" \
         --save_steps 99999 \
         --dataloader_num_workers 4 \

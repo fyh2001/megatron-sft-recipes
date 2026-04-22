@@ -30,7 +30,11 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 from accelerate.utils import set_seed
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForImageTextToText,
+    AutoTokenizer,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -356,10 +360,14 @@ def main():
     # FSDP2 + transformers 5.x, the GradientAccumulationPlugin installed by
     # that kwarg causes the post-prepare rank0 allocation to land at full
     # model size (15.96 GB on Qwen2.5-7B) instead of the sharded 1.77 GB
-    # that fsdp_diag.py sees with the same config but without GAS. The
-    # grad-accum semantics we actually use are driven entirely by the outer
-    # `accelerator.accumulate(model)` context manager below, which does NOT
-    # depend on this constructor arg being set.
+    # that fsdp_diag.py sees with the same config but without GAS.
+    # We instead manage gradient accumulation MANUALLY in the training loop
+    # (see below). This avoids both the plugin sharding regression and
+    # accelerator.accumulate()'s no_sync() behaviour, which would keep
+    # UNSHARDED full-model gradients on every rank for every non-last
+    # microbatch — catastrophic for large models at high GAS (Qwen3.5-9B
+    # at GAS=48 would pin ~8 GB of redundant per-rank grad memory that
+    # reduce-scatter-per-backward otherwise shards away to ~1 GB).
     accelerator = Accelerator(mixed_precision="bf16")
     set_seed(args.seed)
 
@@ -371,11 +379,23 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model_name_or_path,
-        torch_dtype=torch.bfloat16,
-        attn_implementation=args.attn_implementation,
-    )
+    # Some VLM configs (e.g. Qwen3.5-9B's `Qwen3_5ForConditionalGeneration`)
+    # are not registered as AutoModelForCausalLM. Try causal first so pure
+    # text-only models (Qwen2.5-7B, Llama, ...) still take the fast path,
+    # then fall back to AutoModelForImageTextToText. `--freeze_vision` below
+    # zeroes out the vision tower so the measured FLOPs stay text-only.
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model_name_or_path,
+            torch_dtype=torch.bfloat16,
+            attn_implementation=args.attn_implementation,
+        )
+    except ValueError:
+        model = AutoModelForImageTextToText.from_pretrained(
+            args.model_name_or_path,
+            torch_dtype=torch.bfloat16,
+            attn_implementation=args.attn_implementation,
+        )
 
 
     # Activation checkpointing:
@@ -558,6 +578,16 @@ def main():
         bench_file = open(args.benchmark_log, "w")
 
     done = False
+    # Manual gradient accumulation: every microbatch does forward+backward,
+    # accumulating grads into the sharded FSDP2 .grad buffer (reduce-scatter
+    # fires on every backward). After GAS microbatches we clip+step+zero_grad.
+    # Loss is divided by GAS so the effective gradient matches a single
+    # batch of size MBS * NPROC * GAS = GBS.
+    gas = max(args.gradient_accumulation_steps, 1)
+    micro_loss_accum = 0.0
+    micro_token_accum = 0
+    _micro_in_step = 0
+
     # nsys profiling control: start right BEFORE the chosen step begins its
     # forward, stop right AFTER the chosen end step's optimizer.step. Gates
     # on `--profile` so non-profile runs skip the syscall.
@@ -567,33 +597,41 @@ def main():
             break
         model.train()
         for _step, batch in enumerate(train_loader):
+            # gate profiler ON only at a new optimizer-step boundary
             if (
                 args.profile
                 and not _nsys_started
+                and _micro_in_step == 0
                 and global_step + 1 == args.profile_start_step
             ):
                 torch.cuda.synchronize()
                 torch.cuda.cudart().cudaProfilerStart()
                 _nsys_started = True
 
-            with accelerator.accumulate(model):
-                outputs = model(**batch)
-                loss = outputs.loss
-                accelerator.backward(loss)
+            outputs = model(**batch)
+            loss = outputs.loss / gas
+            accelerator.backward(loss)
 
-                if accelerator.sync_gradients:
-                    accelerator.clip_grad_norm_(
-                        model.parameters(), args.max_grad_norm
-                    )
+            # accumulate for per-step logging
+            if "attention_mask" in batch:
+                step_tokens = (batch["attention_mask"] == 1).sum().item()
+            else:
+                step_tokens = batch["input_ids"].numel()
+            micro_loss_accum += loss.detach().float().item() * gas  # undo /gas for logging
+            micro_token_accum += step_tokens
+            _micro_in_step += 1
 
-                optimizer.step()
-                scheduler.step()
-                optimizer.zero_grad()
+            if _micro_in_step < gas:
+                continue  # not the last microbatch in this optimizer step
 
-            if not accelerator.sync_gradients:
-                continue
-
+            # --- optimizer step: one full global step has accumulated ---
+            accelerator.clip_grad_norm_(model.parameters(), args.max_grad_norm)
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
             global_step += 1
+            step_time_ms = (time.time() - step_t0) * 1000
+
             if (
                 args.profile
                 and _nsys_started
@@ -604,42 +642,39 @@ def main():
                 _nsys_started = False  # don't call Stop twice
                 # Keep training so nsys has time to flush the buffer on app
                 # exit; TOTAL_STEPS should already be small (e.g. 12).
-            step_time_ms = (time.time() - step_t0) * 1000
-            if "attention_mask" in batch:
-                step_tokens = (batch["attention_mask"] == 1).sum().item()
-            else:
-                step_tokens = batch["input_ids"].numel()
-            log_loss_accum += loss.detach().float().item()
-            log_token_accum += step_tokens
 
-            # Benchmark per-step logging.
+            # Benchmark per-step logging. `micro_token_accum` already sums all
+            # microbatches in this optimizer step on THIS rank; gather across
+            # ranks so the bench file shows the true per-step global token count.
             # CRITICAL: accelerator.gather() is a COLLECTIVE (all_gather under
             # the hood). Every rank must call it or the collective hangs
             # forever. The previous code wrapped this inside
             # `if accelerator.is_main_process:`, which silently deadlocked on
-            # multi-rank runs: rank 0 blocked in gather waiting for peers,
-            # peers meanwhile tried to start step N+1's FSDP per-layer
-            # all_gathers that needed rank 0 to participate, and both ends
-            # waited on each other. Symptom: every rank pinned at 100% util
-            # 120 W (NCCL polling) and bench.jsonl stayed empty.
+            # multi-rank runs.
+            step_loss = micro_loss_accum / gas
             if args.benchmark:
                 if accelerator.num_processes > 1:
                     total_tokens_t = accelerator.gather(
-                        torch.tensor([step_tokens], device=accelerator.device)
+                        torch.tensor([micro_token_accum], device=accelerator.device)
                     )
                     total_tokens = int(total_tokens_t.sum().item())
                 else:
-                    total_tokens = step_tokens
+                    total_tokens = micro_token_accum
                 if accelerator.is_main_process:
                     bench_file.write(json.dumps({
                         "step": global_step,
                         "step_time_ms": round(step_time_ms, 2),
                         "tokens": total_tokens,
-                        "loss": round(loss.detach().float().item(), 4),
+                        "loss": round(step_loss, 4),
                     }) + "\n")
                     bench_file.flush()
 
+            log_loss_accum += step_loss
+            log_token_accum += micro_token_accum
             step_t0 = time.time()
+            _micro_in_step = 0
+            micro_loss_accum = 0.0
+            micro_token_accum = 0
 
             if global_step % args.logging_steps == 0:
                 avg_loss = log_loss_accum / args.logging_steps

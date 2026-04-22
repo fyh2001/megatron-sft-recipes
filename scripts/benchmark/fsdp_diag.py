@@ -26,7 +26,7 @@ import sys
 
 import torch
 from accelerate import Accelerator
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoModelForImageTextToText
 
 
 def fmt_bytes(nbytes: int) -> str:
@@ -53,9 +53,17 @@ def main() -> None:
 
     log(f"[diag] world={world} rank={rank} model={model_path}")
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2"
-    )
+    # VLM backbones (Qwen3.5-9B et al.) are not registered for
+    # AutoModelForCausalLM; fall back to AutoModelForImageTextToText the
+    # same way scripts/fsdp/train.py does.
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2"
+        )
+    except ValueError:
+        model = AutoModelForImageTextToText.from_pretrained(
+            model_path, torch_dtype=torch.bfloat16, attn_implementation="flash_attention_2"
+        )
     total_params_b = sum(p.numel() for p in model.parameters()) / 1e9
     log(f"[diag] model loaded, total raw params={total_params_b:.2f} B")
 

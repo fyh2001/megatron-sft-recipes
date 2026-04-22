@@ -77,17 +77,21 @@ def inspect(model_path: str) -> dict[str, str]:
         with torch.device("meta"):
             try:
                 return AutoModelForCausalLM.from_config(c)
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, AttributeError):
                 return AutoModel.from_config(c)
 
+    # AttributeError covered too: Qwen3.5's outer VLM config
+    # (Qwen3_5Config) doesn't expose vocab_size / hidden_size directly —
+    # those live on `config.text_config`. AutoModelForCausalLM dispatches
+    # fine but the resulting class's __init__ reads cfg.vocab_size and
+    # blows up before we ever get to count params. Fall back to text_config.
     try:
         model = _build(cfg)
-    except (ValueError, KeyError):
+    except (ValueError, KeyError, AttributeError):
         text_cfg = getattr(cfg, "text_config", None) or getattr(cfg, "llm_config", None)
         if text_cfg is None:
             raise
         model = _build(text_cfg)
-        # surface the text-config attributes below.
         cfg = text_cfg
 
     num_params = sum(p.numel() for p in model.parameters())

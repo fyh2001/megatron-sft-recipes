@@ -1,0 +1,26 @@
+compute_environment: LOCAL_MACHINE
+distributed_type: DEEPSPEED
+num_processes: 8
+num_machines: 1
+mixed_precision: bf16
+main_training_function: main
+deepspeed_config:
+  zero_stage: 3
+  # zero3_init_flag=true installs HfDeepSpeedConfig so transformers shards
+  # parameters as they are instantiated. For Qwen3.5's nested VLM config
+  # this is the recommended path; if it recurses into init loops, bench
+  # scripts flip this to false and fall back to manual init via
+  # deepspeed.init_distributed().
+  zero3_init_flag: true
+  offload_optimizer_device: none
+  offload_param_device: none
+  # Hardcode to 1: train.py manages GAS manually (no accelerator.accumulate()),
+  # so DeepSpeed should reduce-scatter grads on EVERY backward. Setting this
+  # to 'auto' triggers `ValueError: invalid literal 'auto'` because accelerate
+  # resolves 'auto' from the Accelerator(gradient_accumulation_steps=N) kwarg,
+  # which train.py deliberately does NOT pass (the kwarg installs a plugin
+  # that regresses FSDP2 sharding on accelerate 1.13 + transformers 5.x).
+  gradient_accumulation_steps: 1
+  gradient_clipping: 1.0
+  bf16:
+    enabled: true
