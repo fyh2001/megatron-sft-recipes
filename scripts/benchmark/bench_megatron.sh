@@ -28,6 +28,12 @@ source "${SCRIPT_DIR}/../_common.sh"
 : "${USE_MEGATRON_BACKEND:=false}"
 : "${TP:=2}"
 : "${PP:=1}"
+# CP = Megatron context-parallel (ring-attention over seq dim). Applied by
+# ms-swift via --context_parallel_size; total model-parallel group is TP*PP*CP
+# so DP per step is NPROC/(TP*PP*CP). Default 1 = off (preserves old behaviour).
+# SP=true enables tensor-sequence-parallel inside each TP group (independent of
+# CP); we keep it on whenever TP>1 since mcore insists on it for correctness.
+: "${CP:=1}"
 : "${MBS:=1}"
 : "${GBS:=8}"
 : "${MAX_LEN:=4096}"
@@ -70,7 +76,7 @@ printf '  %-22s = %s\n' \
     model "${MODEL}" \
     num_params "${NUM_PARAMS}" \
     backend "${USE_MEGATRON_BACKEND}" \
-    TP/PP "${TP}/${PP}" \
+    TP/PP/CP "${TP}/${PP}/${CP}" \
     MBS/GBS "${MBS}/${GBS}" \
     max_length "${MAX_LEN}" \
     total_steps "${TOTAL_STEPS}" \
@@ -132,6 +138,7 @@ if [ "${USE_MEGATRON_BACKEND}" = "true" ]; then
         --save_safetensors true \
         --tensor_model_parallel_size "${TP}" \
         --pipeline_model_parallel_size "${PP}" \
+        --context_parallel_size "${CP}" \
         --sequence_parallel true \
         --micro_batch_size "${MBS}" \
         --global_batch_size "${GBS}" \
