@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Scrape DCGM profile metrics from a Prometheus endpoint at 0.5 s interval.
+"""Scrape DCGM profile metrics from a Prometheus endpoint.
+
+Sample interval defaults to 0.1 s (10 Hz) so we can resolve per-step bursts.
+Override with env `DCGM_SCRAPE_INTERVAL_S` (float seconds).
 
 Usage::
 
@@ -7,6 +10,7 @@ Usage::
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 import time
@@ -14,6 +18,7 @@ import urllib.request
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "/tmp/dcgm_tc.tsv"
 URL = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:9500/metrics"
+INTERVAL = float(os.environ.get("DCGM_SCRAPE_INTERVAL_S", "0.1"))
 
 PATTERNS = {
     "tc": re.compile(r'^DCGM_FI_PROF_PIPE_TENSOR_ACTIVE\{[^}]*gpu="(\d+)"[^}]*\}\s+(\S+)'),
@@ -30,7 +35,7 @@ with open(OUT, "w") as f:
             with urllib.request.urlopen(URL, timeout=2) as r:
                 body = r.read().decode("utf-8", "ignore")
         except Exception:
-            time.sleep(0.5)
+            time.sleep(INTERVAL)
             continue
         vals = {k: {} for k in PATTERNS}
         for line in body.splitlines():
@@ -48,4 +53,4 @@ with open(OUT, "w") as f:
                 f"{vals['pw'].get(gpu, '')}\n"
             )
         f.flush()
-        time.sleep(0.5)
+        time.sleep(INTERVAL)
