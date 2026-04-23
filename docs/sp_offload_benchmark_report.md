@@ -29,12 +29,16 @@
 
 **"能不能长期跑完训练"速答表**：
 
-| 配置 | 5 步 smoke | 15+ 步长跑 | 生产训练 |
+| 配置 | swift 4.1.2 (pypi) | **swift 4.2.0.dev0 (git main)** | 生产训练 |
 |---|---|---|---|
-| DS / FSDP + Ulysses SP=2 / SP=4 | ✅ | ❌ 确定性死在 step ~8 | ❌ 不要上 |
-| DS + SP=2 + optimizer offload | ✅ | ❌ 同上 | ❌ 同上 |
-| **Megatron TP=4 SP `recompute=none`** | ✅ | ✅ | ✅ **唯一可用** |
-| Megatron TP=2 SP `recompute=selective` | ❌ (OOM) | — | — |
+| DS + Ulysses SP=2 / SP=4 | ❌ 确定性死在 step ~8 | ⚠️ 不崩但 loss=0（grad 被 clip 成 sqrt(2)） | ❌ |
+| DS + SP=2 + optimizer offload | ❌ 同上 | ⚠️ 同上 | ❌ |
+| **FSDP2 + Ulysses SP=2** | ❌ 死在 step ~8 | **✅ 30 步 loss 合理、token_acc 0.64 → 0.84** | **✅ 升 main 后可用** |
+| **FSDP2 + Ulysses SP=4** | ❌ step 4 label OOR 崩 | **✅ 30 步 loss 2.37 → 0.36、token_acc 0.89** | **✅ 升 main 后可用** |
+| **Megatron TP=4 SP `recompute=none`** | ✅ 50 步验证通过 | ✅（同） | ✅ 不依赖 SP 修复 |
+| Megatron TP=2 SP `recompute=selective` | ❌ OOM | ❌ OOM | — |
+
+简言之：**pypi 最新版只能用 Megatron TP=4 SP**；升级 ms-swift 到 git main 后 **FSDP2 + Ulysses SP 变成推荐路径**（比 Megatron 更快、更省）；**DS + Ulysses SP 两个 swift 版本都还不行**，等 modelscope 后续 patch。社区时间线 / 相关 PR 详见 §10。
 
 ---
 
@@ -342,7 +346,62 @@ megatron_output/bench_sp_offload/
 
 ---
 
-## 10. 下一步建议
+## 10. 社区修复：ms-swift main（4.2.0.dev0）解锁 FSDP+SP 长跑
+
+写完 §1-§9 后我们翻了 ms-swift 的 upstream 活动，发现社区在 2026-04-21 / 04-23 连续合并了 3 个 PR 正好修我们遇到的两类问题：
+
+- [ms-swift #9162](https://github.com/modelscope/ms-swift/pull/9162) **`feat(qwen): add sequence parallel support for Qwen3.5 linear attention`**（2026-04-21，作者 `@meichangsu1`，322 +/−8 行）—— 给 GDN 层正确接 Ulysses 的 all-to-all + FLA kernel
+- [ms-swift #9167](https://github.com/modelscope/ms-swift/pull/9167) **`[sp] Add sequence parallel compatibility with transformers >= 5.4.0`**（同日）—— 把 `flash_attention_mask` / `sdpa_mask` / `create_causal_mask` 的签名泛化成 `*args, **kwargs` + 自动 `q_length`↔`cache_position` 互换。正是我们 `swift_sp_patch.py` 手工做的事
+- [ms-swift #9189](https://github.com/modelscope/ms-swift/pull/9189) **`[bugfix] fix qwen3.5 sp`**（2026-04-23，今天）—— 9162 的后续补丁
+
+这些 PR 都**还没发 pypi**。PyPI 最新还是 4.1.2（2026-04-18）。要吃到修复必须装 git main：
+
+```bash
+docker exec fsdp_sft pip install --force-reinstall --no-deps --no-cache-dir \
+    git+https://github.com/modelscope/ms-swift.git@main
+# 验证装的是 4.2.0.dev0
+docker exec fsdp_sft python -c "import swift; print(swift.__version__)"
+```
+
+### 10.1 实测：升级后重跑 30-step long-run
+
+升级到 `ms-swift 4.2.0.dev0` 后重跑 DS+SP=2 / FSDP2+SP=2 / FSDP2+SP=4 各 30 步，结果：
+
+| Group | steps 完成 | 有效 loss 步数 | loss @ 1 / 5 / 15 / 30 | token_acc @ 1 / 15 / 30 | peak mem (GiB) | ≥30 步稳定？ |
+|---|---|---|---|---|---|---|
+| ds_sp2_v2 | 30/30 | **1/30** | 12.84 / **0.0** / **0.0** / **0.0** | 0.00 / 0.00 / 0.00 | 36.74 | 半 ❌（不崩但 loss 恒 0，grad_norm 被钉死 sqrt(2)） |
+| **fsdp2_sp2_v2** | **30/30** | **30/30** | **1.50 / 1.36 / 0.94 / 1.72** | **0.64 / 0.73 / 0.57** | **32.26** | **✅ 真正长跑** |
+| **fsdp2_sp4_v2** | **30/30** | **30/30** | **2.37 / 0.95 / 0.36 / 1.03** | **0.47 / 0.89 / 0.71** | **26.29** | **✅ 真正长跑**（v1 在 step 4 `cur_target OOR` 崩的 bug 被修了） |
+
+完整曲线（`megatron_output/bench_sp_offload_v2/*/v0-*/logging.jsonl`）：
+
+- **fsdp2_sp2_v2**：loss 从 1.50 → 0.94（step 15）→ 1.72（step 30），token_acc 0.64 稳定在 0.5-0.84 区间；grad_norm 3.95 - 13.25，健康；30 步 0 NaN 0 crash
+- **fsdp2_sp4_v2**：loss 从 2.37 大幅下降到 0.36（step 15），再震荡回到 1.0 左右；token_acc 改善到 0.89；peak 26 GB，比 SP=2 再省 6 GB；30 步 0 NaN 0 crash
+- **ds_sp2_v2**：loss 首步 12.84 正常，第 2 步起归 0 且 grad_norm 直接 1.414（`sqrt(2)`，是 HF Trainer 对 NaN grad 的安全替代值）。训练跑得动但**模型不更新**。
+
+### 10.2 结论更新
+
+**FSDP2 + Ulysses SP=2 / SP=4 可以长跑**（前提：ms-swift ≥ 4.2.0.dev0，走 git main）。等 4.1.3 release 到 pypi 就可以当生产配置用。
+
+**DS ZeRO-3 + Ulysses SP 目前还不行**：即使升到 main，loss=0 问题依然存在。社区 PR #9162 的修复明显只针对 FSDP2 验证过（见其实验 run 也是 FSDP2 GBS 更大，见 PR description）。**Qwen3.5 + DS + SP** 需要另外等一个 DS 专属 patch。
+
+**推荐配置**（在本机上，升 ms-swift main 后）：
+
+| 需求 | 配置 | peak mem | step time | MFU |
+|---|---|---|---|---|
+| 最快 | **FSDP2 + SP=2** | 32 GB | ~1.1 s | 80% |
+| 最省 | **FSDP2 + SP=4** | 26 GB | ~3-8 s（SP=4 通信 × 4，慢） | 11-30% |
+| 已验长跑 50 步且装得最快（无 SP 依赖） | Megatron TP=4 SP `recompute=none` | 48 GB | 2.25 s | 40% |
+
+### 10.3 本仓库的 swift_sp_patch.py 还需要吗？
+
+`scripts/benchmark/swift_sp_patch.py` + `swift_sft_patched.py` 是对 ms-swift 4.1.2 的**临时 shim**，做的事就是 PR #9167 的内容（mask API 签名）。**升到 ms-swift main 后这个 shim 不再需要**，可以直接 `swift sft --sequence_parallel_size N ...`。
+
+两个文件留在仓库里作为 "ms-swift 4.1.x fallback" 的历史凭证，`bench_swift_sp_v2.sh` 用 plain `swift sft` 不走 shim。
+
+---
+
+## 11. 下一步建议
 
 1. **修 loss=0 问题**：改用 `--packing true` 或 `--truncation_strategy left` 之一，再跑 TOTAL_STEPS=15 验证真实 MFU，补一轮完整数据。
 2. **写 mcore_bridge Qwen3_5 CP 补丁**（半天到一天）：把 `Qwen3_5MoeGatedDeltaNet` 的继承链从 HF fla 借壳换成 mcore 原生 `modules/gated_delta_net.py`；之后 Megatron TP+CP 能吃到 24 层 GDN 的 activation 收益。目前 TP=4 SP 已经是 Megatron 侧最强配置，提升空间来自 CP 把 GDN 也切开。
@@ -352,6 +411,26 @@ megatron_output/bench_sp_offload/
 ---
 
 ## 附录 A：运行重现
+
+### A.0 v2 矩阵（ms-swift main，推荐用这个而非 v1）
+
+```bash
+# 1. 升级 ms-swift 到 git main（带 PR #9162/#9167/#9189 修复）
+docker exec fsdp_sft pip install --force-reinstall --no-deps --no-cache-dir \
+    git+https://github.com/modelscope/ms-swift.git@main
+
+# 2. 跑 v2 矩阵（DS SP=2 / FSDP2 SP=2 / FSDP2 SP=4 各 30 步）
+for cfg in "BACKEND=ds SP=2 RUN_NAME=ds_sp2_v2" \
+           "BACKEND=fsdp2 SP=2 RUN_NAME=fsdp2_sp2_v2" \
+           "BACKEND=fsdp2 SP=4 RUN_NAME=fsdp2_sp4_v2"; do
+  docker exec fsdp_sft bash -lc "cd /home/ubuntu/perf_opt/megatron-sft-recipes && \
+    $cfg TOTAL_STEPS=30 WARMUP_BENCH=5 \
+    BENCH_DIR=/home/ubuntu/perf_opt/megatron_output/bench_sp_offload_v2 \
+    bash scripts/benchmark/bench_swift_sp_v2.sh"
+done
+```
+
+三组共 ≈ 15 分钟（含 compile 冷启）。
 
 ### A.1 本轮 7 组短跑矩阵
 
