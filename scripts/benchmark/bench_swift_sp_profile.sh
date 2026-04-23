@@ -36,6 +36,11 @@ export CUDA_DEVICE_MAX_CONNECTIONS=8
 : "${FSDP_RESHARD:=true}"
 : "${FSDP_WRAP_POLICY:=}"
 : "${FSDP_MIN_NUM_PARAMS:=}"
+: "${PACKING:=false}"
+: "${USE_LIGER:=false}"
+: "${DATALOADER_WORKERS:=2}"
+: "${DATASET_NUM_PROC:=4}"
+: "${LAZY_TOKENIZE:=true}"
 
 : "${BENCH_DIR:=${OUTPUT_ROOT}/bench_sp_offload_profile}"
 : "${RUN_NAME:=profile_${BACKEND}_sp${SP}}"
@@ -105,6 +110,17 @@ if [ "${TORCH_COMPILE}" = "true" ]; then
     COMPILE_FLAGS+=(--torch_compile true)
 fi
 
+DENSITY_FLAGS=()
+if [ "${PACKING}" = "true" ]; then
+    DENSITY_FLAGS+=(--packing true)
+fi
+if [ "${USE_LIGER}" = "true" ]; then
+    DENSITY_FLAGS+=(--use_liger_kernel true)
+fi
+if [ "${LAZY_TOKENIZE}" = "false" ]; then
+    DENSITY_FLAGS+=(--lazy_tokenize false)
+fi
+
 FREEZE_FLAGS=()
 if [ "${FREEZE_VIT}" = "true" ]; then
     FREEZE_FLAGS+=(--freeze_vit true --freeze_aligner true)
@@ -135,11 +151,12 @@ torchrun --nproc_per_node "${NPROC_PER_NODE}" --master_port "${MASTER_PORT}" "${
     --warmup_ratio 0.1 \
     "${GRAD_CKPT_FLAGS[@]}" \
     "${COMPILE_FLAGS[@]}" \
+    "${DENSITY_FLAGS[@]}" \
     "${FREEZE_FLAGS[@]}" \
     "${BACKEND_FLAGS[@]}" \
     --sequence_parallel_size "${SP}" \
-    --dataloader_num_workers 2 \
-    --dataset_num_proc 4 \
+    --dataloader_num_workers "${DATALOADER_WORKERS}" \
+    --dataset_num_proc "${DATASET_NUM_PROC}" \
     --save_strategy no \
     --logging_steps 1 \
     --output_dir "${BENCH_OUTPUT}" \

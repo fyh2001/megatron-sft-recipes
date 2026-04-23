@@ -37,6 +37,13 @@ export CUDA_DEVICE_MAX_CONNECTIONS=8
 : "${FSDP_WRAP_POLICY:=}"            # TRANSFORMER_BASED_WRAP | SIZE_BASED_WRAP (empty=preset default)
 : "${FSDP_MIN_NUM_PARAMS:=}"         # only used when FSDP_WRAP_POLICY=SIZE_BASED_WRAP
 
+# --- Dataset / compute-density knobs ---
+: "${PACKING:=false}"                # true → --packing true (pack short samples into seq=MAX_LEN)
+: "${USE_LIGER:=false}"              # true → --use_liger_kernel true
+: "${DATALOADER_WORKERS:=2}"         # passed as --dataloader_num_workers
+: "${DATASET_NUM_PROC:=4}"           # passed as --dataset_num_proc
+: "${LAZY_TOKENIZE:=true}"           # false → --lazy_tokenize false (pre-tokenise whole dataset)
+
 : "${BENCH_DIR:=${OUTPUT_ROOT}/bench_sp_offload_v2}"
 : "${RUN_NAME:=${BACKEND}_sp${SP}_v2}"
 BENCH_OUTPUT="${BENCH_DIR}/${RUN_NAME}"
@@ -125,6 +132,17 @@ if [ "${TORCH_COMPILE}" = "true" ]; then
     COMPILE_FLAGS+=(--torch_compile true)
 fi
 
+DENSITY_FLAGS=()
+if [ "${PACKING}" = "true" ]; then
+    DENSITY_FLAGS+=(--packing true)
+fi
+if [ "${USE_LIGER}" = "true" ]; then
+    DENSITY_FLAGS+=(--use_liger_kernel true)
+fi
+if [ "${LAZY_TOKENIZE}" = "false" ]; then
+    DENSITY_FLAGS+=(--lazy_tokenize false)
+fi
+
 FREEZE_FLAGS=()
 if [ "${FREEZE_VIT}" = "true" ]; then
     FREEZE_FLAGS+=(--freeze_vit true --freeze_aligner true)
@@ -148,11 +166,12 @@ NPROC_PER_NODE="${NPROC_PER_NODE}" swift sft \
     --warmup_ratio 0.1 \
     "${GRAD_CKPT_FLAGS[@]}" \
     "${COMPILE_FLAGS[@]}" \
+    "${DENSITY_FLAGS[@]}" \
     "${FREEZE_FLAGS[@]}" \
     "${BACKEND_FLAGS[@]}" \
     --sequence_parallel_size "${SP}" \
-    --dataloader_num_workers 2 \
-    --dataset_num_proc 4 \
+    --dataloader_num_workers "${DATALOADER_WORKERS}" \
+    --dataset_num_proc "${DATASET_NUM_PROC}" \
     --save_strategy no \
     --logging_steps 1 \
     --output_dir "${BENCH_OUTPUT}" \

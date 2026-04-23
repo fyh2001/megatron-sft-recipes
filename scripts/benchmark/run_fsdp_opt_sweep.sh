@@ -90,6 +90,8 @@ run_one() {
 
     # ---- (a) training run ----
     local train_port=$((PORT)); PORT=$((PORT + 1))
+    local train_rc=0
+    set +e
     docker exec fsdp_sft bash -lc "
         cd /home/ubuntu/perf_opt/megatron-sft-recipes && \
         MASTER_PORT=${train_port} ${common_env} \
@@ -97,9 +99,12 @@ run_one() {
         RUN_NAME=train \
         BENCH_DIR='${cfg_dir}' \
         bash scripts/benchmark/bench_swift_sp_v2.sh
-    " 2>&1 | tee "${cfg_dir}/train_runner.log" | tail -5
-    local train_rc=${PIPESTATUS[0]}
+    " > "${cfg_dir}/train_runner.log" 2>&1
+    train_rc=$?
+    set -e
     echo "train_rc=${train_rc}" > "${cfg_dir}/train.rc"
+    log "[sweep] ${name}: train rc=${train_rc}"
+    tail -5 "${cfg_dir}/train_runner.log" || true
     if [ "${train_rc}" != "0" ]; then
         log "[sweep] ${name}: TRAIN FAILED (rc=${train_rc}), skipping profile"
         return 0
@@ -107,6 +112,8 @@ run_one() {
 
     # ---- (b) profile run ----
     local profile_port=$((PORT)); PORT=$((PORT + 1))
+    local prof_rc=0
+    set +e
     docker exec fsdp_sft bash -lc "
         cd /home/ubuntu/perf_opt/megatron-sft-recipes && \
         MASTER_PORT=${profile_port} ${common_env} \
@@ -114,9 +121,12 @@ run_one() {
         RUN_NAME=profile \
         BENCH_DIR='${cfg_dir}' \
         bash scripts/benchmark/bench_swift_sp_profile.sh
-    " 2>&1 | tee "${cfg_dir}/profile_runner.log" | tail -5
-    local prof_rc=${PIPESTATUS[0]}
+    " > "${cfg_dir}/profile_runner.log" 2>&1
+    prof_rc=$?
+    set -e
     echo "profile_rc=${prof_rc}" > "${cfg_dir}/profile.rc"
+    log "[sweep] ${name}: profile rc=${prof_rc}"
+    tail -5 "${cfg_dir}/profile_runner.log" || true
 }
 
 while IFS= read -r line; do
