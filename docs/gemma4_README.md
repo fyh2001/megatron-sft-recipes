@@ -29,6 +29,10 @@
    - `docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py`
    - 期望 `39ebf386a992fea9eac0883f459ac658`（gemma4 modeling 4 处 patch）
 
+### 🟣 我手上是干净机器，要从零搭一遍（90 分钟）
+
+读 [`gemma4_setup_from_scratch.md`](gemma4_setup_from_scratch.md) — 12 步从硬件 checklist → docker pull → 模型下载 → patch 应用 → smoke test → P5 peak 完整流程，含 5 个最容易撞到的坑 + 一键 setup 脚本。
+
 ### 🟠 我要看每期具体踩过哪些坑、为什么这么定（2 小时）
 
 主线读 [`gemma4_optimization_walkthrough.md`](gemma4_optimization_walkthrough.md)（≈800 行），按 9 期顺序：
@@ -85,7 +89,10 @@ experiments/gemma4_opt/p<N>_<axis>/run_<TIMESTAMP>_<LABEL>/
 ### 5. [`gemma4_baseline_summary.md`](gemma4_baseline_summary.md) — Phase 0 双后端 baseline 一览 ⭐
 项目早期产物，就单独 P0 阶段写的。
 
-### 6. **本文** [`gemma4_README.md`](gemma4_README.md) — 你正在读
+### 6. [`gemma4_setup_from_scratch.md`](gemma4_setup_from_scratch.md) — 从零搭建复现环境 ⭐⭐
+12 步从干净机器到 P5 peak 跑通：硬件 checklist → docker → 模型下载 → ms-swift fork install → modeling patch → smoke test → DS baseline → P5 peak → 全套 phase。含一键 setup 脚本。
+
+### 7. **本文** [`gemma4_README.md`](gemma4_README.md) — 你正在读
 
 ---
 
