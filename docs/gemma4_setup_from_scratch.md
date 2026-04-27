@@ -153,7 +153,9 @@ cd /usr/local/lib/python3.12/site-packages/transformers/models/gemma4
 cp modeling_gemma4.py modeling_gemma4.py.orig
 
 # 应用 patch（diff 格式是 ed 命令式，不是 unified diff）
-patch < /home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/gemma4_modeling_compat.patch
+# 注意：必须显式传文件名给 patch，因为 ed-style 格式不带文件名 header；
+# 写成 'patch < file' 会报 'Only garbage was found in the patch input'。
+patch modeling_gemma4.py < /home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/gemma4_modeling_compat.patch
 "
 ```
 
@@ -371,7 +373,7 @@ echo "[6/6] Applying modeling_gemma4 compat patch..."
 docker exec fsdp_sft bash -lc "
 cd /usr/local/lib/python3.12/site-packages/transformers/models/gemma4
 cp modeling_gemma4.py modeling_gemma4.py.orig
-patch < /home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/gemma4_modeling_compat.patch
+patch modeling_gemma4.py < /home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/gemma4_modeling_compat.patch
 md5sum modeling_gemma4.py
 "
 

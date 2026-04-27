@@ -14,9 +14,12 @@ NEW_MD5=$(docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/tr
 if [ "${NEW_MD5}" = "39ebf386a992fea9eac0883f459ac658" ]; then
     echo "  modeling_gemma4 already at patched md5; skipping."
 else
+    # Note: must pass filename explicitly to `patch` because the patch file
+    # uses ed-style format (line-number commands like `21a22`, no filename
+    # headers).  `patch < file` would error with "Only garbage was found".
     docker exec fsdp_sft bash -lc "
 cd /usr/local/lib/python3.12/site-packages/transformers/models/gemma4
-patch < ${REPO}/scripts/gemma4_opt/gemma4_modeling_compat.patch
+patch modeling_gemma4.py < ${REPO}/scripts/gemma4_opt/gemma4_modeling_compat.patch
 md5sum modeling_gemma4.py
 "
 fi
