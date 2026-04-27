@@ -1,0 +1,13 @@
+{
+    "_purpose": "FSDP2 align run mirroring DS prod-baseline. ZeRO-3 (full reshard) + AC=on, gemma4-specific workarounds. NO CPU offload (mem_efficient SDPA + paged AdamW gives enough headroom).",
+    "fsdp": "full_shard auto_wrap",
+    "fsdp_config": {
+        "fsdp_version": 2,
+        "reshard_after_forward": true,
+        "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+        "cpu_ram_efficient_loading": false,
+        "state_dict_type": "SHARDED_STATE_DICT",
+        "activation_checkpointing": true,
+        "transformer_layer_cls_to_wrap": ["Gemma4TextDecoderLayer", "Gemma4VisionEncoderLayer"]
+    }
+}

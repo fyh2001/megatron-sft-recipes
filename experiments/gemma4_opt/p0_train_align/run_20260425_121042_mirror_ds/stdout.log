@@ -1,0 +1,152 @@
+run sh: `/usr/local/bin/python -m torch.distributed.run --nproc_per_node 8 --master_port 29501 /home/ubuntu/fyh/ms-swift-fork/swift/cli/sft.py --model /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it --model_type gemma4 --template gemma4 --output_dir /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_train_align/run_20260425_121042_mirror_ds/swift_out --tuner_type full --dataset /home/ubuntu/fyh/megatron-sft-recipes/sft-data/train.jsonl --load_from_cache_file false --truncation_strategy right --split_dataset_ratio 0 --torch_dtype bfloat16 --max_steps 40 --per_device_train_batch_size 1 --learning_rate 2e-5 --gradient_accumulation_steps 16 --save_strategy no --logging_steps 1 --max_length 16384 --warmup_ratio 0.05 --dataloader_num_workers 4 --dataloader_pin_memory false --fsdp /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_train_align/run_20260425_121042_mirror_ds/fsdp_override.json --sequence_parallel_size 2 --attn_impl flash_attention_2 --use_liger_kernel true --torch_empty_cache_steps 10 --report_to tensorboard --save_only_model true --padding_free false --seed 42 --data_seed 42`
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[INFO:swift] Successfully registered `/home/ubuntu/fyh/ms-swift-fork/swift/dataset/data/dataset_info.json`.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/cli/sft.py", line 20, in <module>
+    sft_main()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/train/sft.py", line 354, in sft_main
+    return SwiftSft(args).main()
+           ^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/train/sft.py", line 27, in __init__
+    super().__init__(args)
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/base.py", line 18, in __init__
+    self.args = self._parse_args(args)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/base.py", line 35, in _parse_args
+    args, remaining_argv = parse_args(self.args_class, args)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/utils/utils.py", line 182, in parse_args
+    args, remaining_args = parser.parse_args_into_dataclasses(argv, return_remaining_strings=True)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/transformers/hf_argparser.py", line 345, in parse_args_into_dataclasses
+    obj = dtype(**inputs)
+          ^^^^^^^^^^^^^^^
+  File "<string>", line 320, in __init__
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 223, in __post_init__
+    self._init_fsdp()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 322, in _init_fsdp
+    self._check_fsdp2_compatibility()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 337, in _check_fsdp2_compatibility
+    raise ValueError(
+ValueError: FSDP2 with SHARDED_STATE_DICT is not compatible with save_only_model=True. Either set save_only_model=False, or change state_dict_type to FULL_STATE_DICT in fsdp_config. Note: FULL_STATE_DICT requires more memory and is slower.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/cli/sft.py", line 20, in <module>
+    sft_main()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/train/sft.py", line 354, in sft_main
+    return SwiftSft(args).main()
+           ^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/train/sft.py", line 27, in __init__
+    super().__init__(args)
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/base.py", line 18, in __init__
+    self.args = self._parse_args(args)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/pipelines/base.py", line 35, in _parse_args
+    args, remaining_argv = parse_args(self.args_class, args)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/utils/utils.py", line 182, in parse_args
+    args, remaining_args = parser.parse_args_into_dataclasses(argv, return_remaining_strings=True)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/transformers/hf_argparser.py", line 345, in parse_args_into_dataclasses
+    obj = dtype(**inputs)
+          ^^^^^^^^^^^^^^^
+  File "<string>", line 320, in __init__
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 223, in __post_init__
+    self._init_fsdp()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 322, in _init_fsdp
+    self._check_fsdp2_compatibility()
+  File "/home/ubuntu/fyh/ms-swift-fork/swift/arguments/sft_args.py", line 337, in _check_fsdp2_compatibility
+    raise ValueError(
+ValueError: FSDP2 with SHARDED_STATE_DICT is not compatible with save_only_model=True. Either set save_only_model=False, or change state_dict_type to FULL_STATE_DICT in fsdp_config. Note: FULL_STATE_DICT requires more memory and is slower.
+W0425 20:11:02.798000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159269 closing signal SIGTERM
+W0425 20:11:02.798000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159270 closing signal SIGTERM
+W0425 20:11:02.799000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159271 closing signal SIGTERM
+W0425 20:11:02.799000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159273 closing signal SIGTERM
+W0425 20:11:02.800000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159274 closing signal SIGTERM
+W0425 20:11:02.801000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 159275 closing signal SIGTERM
+E0425 20:11:03.065000 159203 site-packages/torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 3 (pid: 159272) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/home/ubuntu/fyh/ms-swift-fork/swift/cli/sft.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-04-25_20:11:02
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 7 (local_rank: 7)
+  exitcode  : 1 (pid: 159276)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 0 (local_rank: 0)
+  exitcode  : -15 (pid: 159269)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159269
+[3]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 1 (local_rank: 1)
+  exitcode  : -15 (pid: 159270)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159270
+[4]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 2 (local_rank: 2)
+  exitcode  : -15 (pid: 159271)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159271
+[5]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 4 (local_rank: 4)
+  exitcode  : -15 (pid: 159273)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159273
+[6]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 5 (local_rank: 5)
+  exitcode  : -15 (pid: 159274)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159274
+[7]:
+  time      : 2026-04-25_20:11:03
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 6 (local_rank: 6)
+  exitcode  : -15 (pid: 159275)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 159275
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-04-25_20:11:02
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 159272)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

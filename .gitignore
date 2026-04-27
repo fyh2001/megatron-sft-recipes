@@ -9,10 +9,25 @@ sft-data/*.jsonl
 sft-data/*.arrow
 sft-data/dataset_info.json
 sft-data/state.json
-megatron_output/
 *.safetensors
 *.pt
 *.bin
+
+# megatron_output 是仓库外的临时产出地（兄弟目录），保留 ignore 防误入
+megatron_output/
+
+# experiments/ 下的 phase run 产物：默认入仓做 walkthrough 复现追踪，
+# 但排除大件 / 不可复现 / 二进制 profile 产物
+experiments/**/checkpoint-*/
+experiments/**/*.nsys-rep
+experiments/**/*.sqlite
+experiments/**/profile.*
+# forward_align 的 full dump（111 MB）：跑 slim_forward_align_npz.py 出 _slim 版（11 MB）入仓
+experiments/gemma4_opt/p0_forward_align/
+# dcgm_tc.tsv：GPU 监控逐秒采样，74 份共 130 MB，attempts.md 无引用，本地保留即可
+experiments/**/dcgm_tc.tsv
+# train.log：swift trainer 内部 log，跟 stdout.log 重复
+experiments/**/train.log
 
 # 模型权重本地缓存
 models--*/

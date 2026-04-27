@@ -1,0 +1,1 @@
+FAILED — same swift Ulysses SP MBS≥2 dict-attention_mask bug as run_mbs2_ga1_gbs8. MBS=2 with VLM gemma4 hits `length = tensor.shape[dim]` on dict.

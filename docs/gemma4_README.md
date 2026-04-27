@@ -47,7 +47,7 @@
 
 每个 run 目录下固定 5 个文件：
 ```
-megatron_output/gemma4_opt/p<N>_<axis>/run_<TIMESTAMP>_<LABEL>/
+experiments/gemma4_opt/p<N>_<axis>/run_<TIMESTAMP>_<LABEL>/
 ├── cmd.sh            ← 该次启动的完整命令（粘贴可复跑）
 ├── stdout.log        ← 完整 stdout + stderr（不截断）
 ├── STATUS            ← 一行: SUCCESS / FAILED + 原因摘要
@@ -58,7 +58,7 @@ megatron_output/gemma4_opt/p<N>_<axis>/run_<TIMESTAMP>_<LABEL>/
 + gpu_metrics.jsonl   ← gpu_monitor.py 1Hz 全卡 power/util
 ```
 
-每期 run 的时间线索引在 `megatron_output/gemma4_opt/p<N>_<axis>/attempts.md`。
+每期 run 的时间线索引在 `experiments/gemma4_opt/p<N>_<axis>/attempts.md`。
 
 ---
 
@@ -96,14 +96,14 @@ megatron_output/gemma4_opt/p<N>_<axis>/run_<TIMESTAMP>_<LABEL>/
 | Phase | 链接 | 关键内容 |
 |---|---|---|
 | P0a/b/c | （没单独 attempts.md，run 较少）| FSDP2 baseline + DS prod baseline |
-| **P0g** | [`p0_train_align/attempts.md`](../../megatron_output/gemma4_opt/p0_train_align/attempts.md) | **13 次 attempt 解 OOM 链** — 项目最难的一期 |
-| P1 | [`p1_gbs_sweep/attempts.md`](../../megatron_output/gemma4_opt/p1_gbs_sweep/attempts.md) | 7 个配置点的 GBS/MBS 二维扫盘 |
-| P2 | [`p2_no_ac/attempts.md`](../../megatron_output/gemma4_opt/p2_no_ac/attempts.md) | AC=off native vs offload |
-| P3 | [`p3_reshard/attempts.md`](../../megatron_output/gemma4_opt/p3_reshard/attempts.md) | ZeRO-2 模式（不采纳）|
-| P4 | [`p4_packing/attempts.md`](../../megatron_output/gemma4_opt/p4_packing/attempts.md) | packing —— 最大单期增益 |
-| P5 | [`p5_liger/attempts.md`](../../megatron_output/gemma4_opt/p5_liger/attempts.md) | Liger gemma4 dispatch + FLCE bug |
-| P6 | [`p6_compile/attempts.md`](../../megatron_output/gemma4_opt/p6_compile/attempts.md) | torch.compile blocked |
-| P8 | [`p8_gbs_resweep/attempts.md`](../../megatron_output/gemma4_opt/p8_gbs_resweep/attempts.md) | 完整 stack 上 GBS 复核 |
+| **P0g** | [`p0_train_align/attempts.md`](../experiments/gemma4_opt/p0_train_align/attempts.md) | **13 次 attempt 解 OOM 链** — 项目最难的一期 |
+| P1 | [`p1_gbs_sweep/attempts.md`](../experiments/gemma4_opt/p1_gbs_sweep/attempts.md) | 7 个配置点的 GBS/MBS 二维扫盘 |
+| P2 | [`p2_no_ac/attempts.md`](../experiments/gemma4_opt/p2_no_ac/attempts.md) | AC=off native vs offload |
+| P3 | [`p3_reshard/attempts.md`](../experiments/gemma4_opt/p3_reshard/attempts.md) | ZeRO-2 模式（不采纳）|
+| P4 | [`p4_packing/attempts.md`](../experiments/gemma4_opt/p4_packing/attempts.md) | packing —— 最大单期增益 |
+| P5 | [`p5_liger/attempts.md`](../experiments/gemma4_opt/p5_liger/attempts.md) | Liger gemma4 dispatch + FLCE bug |
+| P6 | [`p6_compile/attempts.md`](../experiments/gemma4_opt/p6_compile/attempts.md) | torch.compile blocked |
+| P8 | [`p8_gbs_resweep/attempts.md`](../experiments/gemma4_opt/p8_gbs_resweep/attempts.md) | 完整 stack 上 GBS 复核 |
 
 ---
 

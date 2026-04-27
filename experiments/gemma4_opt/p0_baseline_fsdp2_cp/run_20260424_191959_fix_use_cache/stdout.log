@@ -1,0 +1,976 @@
+The following values were not passed to `accelerate launch` and had defaults used instead:
+		More than one GPU was found, enabling multi-GPU training.
+		If this was unintended please pass in `--num_processes=1`.
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+ParallelismConfig: ParallelismConfig(
+ 	dp_replicate_size=1,
+	dp_shard_size=4,
+	tp_size=1,
+	cp_size=2,
+	cp_backend=torch,
+	sp_size=1,
+	sp_backend=deepspeed,
+	total_size=8
+	tp_handler=None,
+	cp_handler=TorchContextParallelConfig(cp_comm_strategy='allgather'))
+
+FSDP2 plugin activation_checkpointing=True, cpu_ram_efficient_loading=False
+Loading model from /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it with sdpa + bf16 ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  98%|█████████▊| 988/1013 [00:00<00:00, 9873.70it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9901.72it/s]
+Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 10177.94it/s]
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  96%|█████████▋| 976/1013 [00:00<00:00, 9723.06it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9732.61it/s]
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  98%|█████████▊| 990/1013 [00:00<00:00, 9894.54it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9899.69it/s]
+Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:   0%|          | 0/1013 [00:00<?, ?it/s]Loading weights:  92%|█████████▏| 934/1013 [00:00<00:00, 9337.92it/s]Loading weights:  94%|█████████▍| 953/1013 [00:00<00:00, 9526.06it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9375.24it/s]
+Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9559.51it/s]
+Loading weights:  96%|█████████▋| 977/1013 [00:00<00:00, 9761.70it/s]Frozen 353 vision/aligner params; trainable=25.24B / total=25.81B
+Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9857.48it/s]
+Loading weights:  96%|█████████▌| 971/1013 [00:00<00:00, 9705.17it/s]Loading weights: 100%|██████████| 1013/1013 [00:00<00:00, 9704.58it/s]
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/torch/distributed/device_mesh.py:603: UserWarning: Slicing a flattened dim from root mesh will be deprecated in PT 2.11. Users need to bookkeep the flattened mesh directly. 
+  sliced_mesh_layout = self._get_slice_mesh_layout(mesh_dim_names)
+/usr/local/lib/python3.12/site-packages/accelerate/utils/fsdp_utils.py:742: UserWarning: FSDP upcast of low precision parameters to fp32 (since mixed_precision != 'no') may affect the precision of model checkpoints. This effects 628 parameters: ['model.language_model.embed_tokens.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.0.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.0.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.0.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.0.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.0.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.0.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.0.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.0.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.0.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.0.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.0.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.1.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.1.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.1.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.1.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.1.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.1.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.1.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.1.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.1.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.1.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.1.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.2.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.2.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.2.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.2.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.2.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.2.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.2.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.2.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.2.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.2.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.2.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.3.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.3.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.3.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.3.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.3.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.3.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.3.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.3.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.3.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.3.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.3.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.4.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.4.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.4.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.4.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.4.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.4.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.4.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.4.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.4.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.4.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.4.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.5.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.5.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.5.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.5.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.5.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.5.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.5.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.5.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.5.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.5.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.5.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.5.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.5.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.5.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.6.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.6.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.6.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.6.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.6.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.6.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.6.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.6.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.6.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.6.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.6.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.7.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.7.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.7.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.7.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.7.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.7.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.7.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.7.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.7.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.7.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.7.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.8.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.8.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.8.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.8.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.8.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.8.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.8.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.8.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.8.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.8.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.8.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.9.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.9.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.9.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.9.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.9.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.9.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.9.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.9.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.9.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.9.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.9.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.10.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.10.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.10.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.10.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.10.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.10.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.10.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.10.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.10.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.10.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.10.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.11.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.11.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.11.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.11.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.11.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.11.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.11.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.11.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.11.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.11.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.11.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.11.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.11.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.11.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.12.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.12.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.12.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.12.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.12.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.12.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.12.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.12.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.12.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.12.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.12.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.13.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.13.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.13.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.13.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.13.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.13.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.13.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.13.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.13.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.13.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.13.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.14.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.14.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.14.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.14.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.14.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.14.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.14.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.14.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.14.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.14.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.14.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.15.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.15.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.15.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.15.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.15.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.15.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.15.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.15.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.15.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.15.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.15.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.16.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.16.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.16.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.16.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.16.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.16.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.16.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.16.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.16.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.16.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.16.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.17.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.17.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.17.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.17.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.17.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.17.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.17.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.17.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.17.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.17.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.17.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.17.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.17.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.17.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.18.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.18.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.18.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.18.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.18.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.18.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.18.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.18.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.18.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.18.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.18.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.19.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.19.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.19.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.19.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.19.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.19.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.19.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.19.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.19.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.19.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.19.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.20.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.20.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.20.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.20.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.20.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.20.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.20.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.20.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.20.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.20.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.20.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.21.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.21.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.21.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.21.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.21.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.21.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.21.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.21.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.21.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.21.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.21.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.22.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.22.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.22.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.22.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.22.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.22.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.22.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.22.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.22.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.22.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.22.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.23.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.23.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.23.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.23.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.23.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.23.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.23.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.23.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.23.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.23.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.23.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.23.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.23.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.23.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.24.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.24.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.24.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.24.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.24.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.24.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.24.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.24.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.24.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.24.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.24.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.25.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.25.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.25.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.25.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.25.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.25.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.25.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.25.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.25.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.25.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.25.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.26.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.26.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.26.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.26.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.26.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.26.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.26.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.26.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.26.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.26.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.26.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.27.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.27.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.27.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.27.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.27.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.27.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.27.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.27.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.27.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.27.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.27.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.v_proj.weight', 'model.language_model.layers.28.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.28.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.28.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.28.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.28.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.28.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.28.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.28.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.28.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.28.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.28.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.self_attn._checkpoint_wrapped_module.q_proj.weight', 'model.language_model.layers.29.self_attn._checkpoint_wrapped_module.q_norm.weight', 'model.language_model.layers.29.self_attn._checkpoint_wrapped_module.k_norm.weight', 'model.language_model.layers.29.self_attn._checkpoint_wrapped_module.k_proj.weight', 'model.language_model.layers.29.self_attn._checkpoint_wrapped_module.o_proj.weight', 'model.language_model.layers.29.mlp._checkpoint_wrapped_module.gate_proj.weight', 'model.language_model.layers.29.mlp._checkpoint_wrapped_module.up_proj.weight', 'model.language_model.layers.29.mlp._checkpoint_wrapped_module.down_proj.weight', 'model.language_model.layers.29.input_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.post_attention_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.pre_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.post_feedforward_layernorm._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.router._checkpoint_wrapped_module.scale', 'model.language_model.layers.29.router._checkpoint_wrapped_module.per_expert_scale', 'model.language_model.layers.29.router._checkpoint_wrapped_module.proj.weight', 'model.language_model.layers.29.experts._checkpoint_wrapped_module.gate_up_proj', 'model.language_model.layers.29.experts._checkpoint_wrapped_module.down_proj', 'model.language_model.layers.29.post_feedforward_layernorm_1._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.post_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.layers.29.pre_feedforward_layernorm_2._checkpoint_wrapped_module.weight', 'model.language_model.norm.weight', 'model.embed_vision.embedding_projection.weight']...
+  warnings.warn(
+Starting training loop ...
+/usr/local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+[rank0]:[W425 03:20:30.822659435 ProcessGroupNCCL.cpp:5138] Guessing device ID based on global rank. This can cause a hang if rank to GPU mapping is heterogeneous. You can specify device_id in init_process_group()
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank4]:     main()
+[rank4]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank4]:     outputs = model(**batch)
+[rank4]:               ^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank4]:     return inner()
+[rank4]:            ^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank4]:     result = forward_call(*args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank4]:     output = func(self, *args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank4]:     outputs = self.model(
+[rank4]:               ^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank4]:     return forward_call(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank4]:     output = func(self, *args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank4]:     output = func(self, *args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank4]:     outputs = self.language_model(
+[rank4]:               ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank4]:     return forward_call(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank4]:     output = func(self, *args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank4]:     outputs = func(self, *args, **kwargs)
+[rank4]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank4]:     hidden_states = decoder_layer(
+[rank4]:                     ^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank4]:     return super().__call__(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank4]:     return inner()
+[rank4]:            ^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank4]:     result = forward_call(*args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank4]:     hidden_states, _ = self.self_attn(
+[rank4]:                        ^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank4]:     return forward_call(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank4]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank4]:     return disable_fn(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank4]:     return fn(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank4]:     ret = function(*args, **kwargs)
+[rank4]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank4]:     return self._call_impl(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank4]:     return inner()
+[rank4]:            ^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank4]:     result = forward_call(*args, **kwargs)
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank4]:     attn_output, attn_weights = attention_interface(
+[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank4]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank4]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank4]:     outputs = target_fn(*args, **kwargs)
+[rank4]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank1]:     main()
+[rank1]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank1]:     outputs = model(**batch)
+[rank1]:               ^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank1]:     return inner()
+[rank1]:            ^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank1]:     result = forward_call(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank1]:     output = func(self, *args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank1]:     outputs = self.model(
+[rank1]:               ^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank1]:     output = func(self, *args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank1]:     output = func(self, *args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank1]:     outputs = self.language_model(
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank1]:     output = func(self, *args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank1]:     outputs = func(self, *args, **kwargs)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank1]:     hidden_states = decoder_layer(
+[rank1]:                     ^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank1]:     return super().__call__(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank1]:     return inner()
+[rank1]:            ^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank1]:     result = forward_call(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank1]:     hidden_states, _ = self.self_attn(
+[rank1]:                        ^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank1]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank1]:     return disable_fn(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank1]:     return fn(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank1]:     ret = function(*args, **kwargs)
+[rank1]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank1]:     return inner()
+[rank1]:            ^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank1]:     result = forward_call(*args, **kwargs)
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank1]:     attn_output, attn_weights = attention_interface(
+[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank1]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank1]:     outputs = target_fn(*args, **kwargs)
+[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank6]:     main()
+[rank6]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank6]:     outputs = model(**batch)
+[rank6]:               ^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank6]:     return inner()
+[rank6]:            ^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank6]:     result = forward_call(*args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank6]:     output = func(self, *args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank6]:     outputs = self.model(
+[rank6]:               ^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank6]:     return forward_call(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank6]:     output = func(self, *args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank6]:     output = func(self, *args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank6]:     outputs = self.language_model(
+[rank6]:               ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank6]:     return forward_call(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank6]:     output = func(self, *args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank6]:     outputs = func(self, *args, **kwargs)
+[rank6]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank6]:     hidden_states = decoder_layer(
+[rank6]:                     ^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank6]:     return super().__call__(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank6]:     return inner()
+[rank6]:            ^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank6]:     result = forward_call(*args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank6]:     hidden_states, _ = self.self_attn(
+[rank6]:                        ^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank6]:     return forward_call(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank6]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank6]:     return disable_fn(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank6]:     return fn(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank6]:     ret = function(*args, **kwargs)
+[rank6]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank6]:     return self._call_impl(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank6]:     return inner()
+[rank6]:            ^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank6]:     result = forward_call(*args, **kwargs)
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank6]:     attn_output, attn_weights = attention_interface(
+[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank6]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank6]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank6]:     outputs = target_fn(*args, **kwargs)
+[rank6]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank7]:     main()
+[rank7]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank7]:     outputs = model(**batch)
+[rank7]:               ^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank7]:     return inner()
+[rank7]:            ^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank7]:     result = forward_call(*args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank7]:     output = func(self, *args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank7]:     outputs = self.model(
+[rank7]:               ^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank7]:     return forward_call(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank7]:     output = func(self, *args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank7]:     output = func(self, *args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank7]:     outputs = self.language_model(
+[rank7]:               ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank7]:     return forward_call(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank7]:     output = func(self, *args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank7]:     outputs = func(self, *args, **kwargs)
+[rank7]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank7]:     hidden_states = decoder_layer(
+[rank7]:                     ^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank7]:     return super().__call__(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank7]:     return inner()
+[rank7]:            ^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank7]:     result = forward_call(*args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank7]:     hidden_states, _ = self.self_attn(
+[rank7]:                        ^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank7]:     return forward_call(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank7]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank7]:     return disable_fn(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank7]:     return fn(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank7]:     ret = function(*args, **kwargs)
+[rank7]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank7]:     return self._call_impl(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank7]:     return inner()
+[rank7]:            ^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank7]:     result = forward_call(*args, **kwargs)
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank7]:     attn_output, attn_weights = attention_interface(
+[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank7]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank7]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank7]:     outputs = target_fn(*args, **kwargs)
+[rank7]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank3]:     main()
+[rank3]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank3]:     outputs = model(**batch)
+[rank3]:               ^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank3]:     return inner()
+[rank3]:            ^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank3]:     result = forward_call(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank3]:     output = func(self, *args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank3]:     outputs = self.model(
+[rank3]:               ^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank3]:     output = func(self, *args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank3]:     output = func(self, *args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank3]:     outputs = self.language_model(
+[rank3]:               ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank3]:     output = func(self, *args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank3]:     outputs = func(self, *args, **kwargs)
+[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank3]:     hidden_states = decoder_layer(
+[rank3]:                     ^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank3]:     return super().__call__(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank3]:     return inner()
+[rank3]:            ^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank3]:     result = forward_call(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank3]:     hidden_states, _ = self.self_attn(
+[rank3]:                        ^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank3]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank3]:     return disable_fn(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank3]:     return fn(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank3]:     ret = function(*args, **kwargs)
+[rank3]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank3]:     return inner()
+[rank3]:            ^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank3]:     result = forward_call(*args, **kwargs)
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank3]:     attn_output, attn_weights = attention_interface(
+[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank3]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank3]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank3]:     outputs = target_fn(*args, **kwargs)
+[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank0]:     outputs = model(**batch)
+[rank0]:               ^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank0]:     return inner()
+[rank0]:            ^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank0]:     output = func(self, *args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank0]:     outputs = self.model(
+[rank0]:               ^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank0]:     output = func(self, *args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank0]:     output = func(self, *args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank0]:     outputs = self.language_model(
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank0]:     output = func(self, *args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank0]:     outputs = func(self, *args, **kwargs)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank0]:     hidden_states = decoder_layer(
+[rank0]:                     ^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank0]:     return super().__call__(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank0]:     return inner()
+[rank0]:            ^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank0]:     hidden_states, _ = self.self_attn(
+[rank0]:                        ^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank0]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank0]:     return disable_fn(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank0]:     return fn(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank0]:     ret = function(*args, **kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank0]:     return inner()
+[rank0]:            ^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank0]:     result = forward_call(*args, **kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank0]:     attn_output, attn_weights = attention_interface(
+[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank0]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank0]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank0]:     outputs = target_fn(*args, **kwargs)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank2]:     main()
+[rank2]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank2]:     outputs = model(**batch)
+[rank2]:               ^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank2]:     return inner()
+[rank2]:            ^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank2]:     result = forward_call(*args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank2]:     output = func(self, *args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank2]:     outputs = self.model(
+[rank2]:               ^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank2]:     output = func(self, *args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank2]:     output = func(self, *args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank2]:     outputs = self.language_model(
+[rank2]:               ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank2]:     output = func(self, *args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank2]:     outputs = func(self, *args, **kwargs)
+[rank2]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank2]:     hidden_states = decoder_layer(
+[rank2]:                     ^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank2]:     return super().__call__(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank2]:     return inner()
+[rank2]:            ^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank2]:     result = forward_call(*args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank2]:     hidden_states, _ = self.self_attn(
+[rank2]:                        ^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank2]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank2]:     return disable_fn(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank2]:     return fn(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank2]:     ret = function(*args, **kwargs)
+[rank2]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank2]:     return inner()
+[rank2]:            ^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank2]:     result = forward_call(*args, **kwargs)
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank2]:     attn_output, attn_weights = attention_interface(
+[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank2]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank2]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank2]:     outputs = target_fn(*args, **kwargs)
+[rank2]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 247, in <module>
+[rank5]:     main()
+[rank5]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 197, in main
+[rank5]:     outputs = model(**batch)
+[rank5]:               ^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank5]:     return inner()
+[rank5]:            ^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank5]:     result = forward_call(*args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank5]:     output = func(self, *args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2455, in forward
+[rank5]:     outputs = self.model(
+[rank5]:               ^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank5]:     return forward_call(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank5]:     output = func(self, *args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+[rank5]:     output = func(self, *args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 2314, in forward
+[rank5]:     outputs = self.language_model(
+[rank5]:               ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank5]:     return forward_call(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/generic.py", line 952, in wrapper
+[rank5]:     output = func(self, *args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/utils/output_capturing.py", line 248, in wrapper
+[rank5]:     outputs = func(self, *args, **kwargs)
+[rank5]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1622, in forward
+[rank5]:     hidden_states = decoder_layer(
+[rank5]:                     ^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_layers.py", line 93, in __call__
+[rank5]:     return super().__call__(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank5]:     return inner()
+[rank5]:            ^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank5]:     result = forward_call(*args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1368, in forward
+[rank5]:     hidden_states, _ = self.self_attn(
+[rank5]:                        ^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+[rank5]:     return forward_call(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/algorithms/_checkpoint/checkpoint_wrapper.py", line 168, in forward
+[rank5]:     return self.checkpoint_fn(  # type: ignore[misc]
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/_compile.py", line 54, in inner
+[rank5]:     return disable_fn(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py", line 1181, in _fn
+[rank5]:     return fn(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/utils/checkpoint.py", line 512, in checkpoint
+[rank5]:     ret = function(*args, **kwargs)
+[rank5]:           ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+[rank5]:     return self._call_impl(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1882, in _call_impl
+[rank5]:     return inner()
+[rank5]:            ^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1830, in inner
+[rank5]:     result = forward_call(*args, **kwargs)
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py", line 1232, in forward
+[rank5]:     attn_output, attn_weights = attention_interface(
+[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py", line 92, in sdpa_attention_forward
+[rank5]:     attn_output = torch.nn.functional.scaled_dot_product_attention(
+[rank5]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/torch/distributed/tensor/experimental/_context_parallel/_attention.py", line 966, in inner_fn
+[rank5]:     outputs = target_fn(*args, **kwargs)
+[rank5]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]: RuntimeError: aten.add.Tensor got mixed torch.Tensor and DTensor, need to convert all torch.Tensor to DTensor before calling distributed operators!
+[rank4]:[W425 03:20:34.373827429 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank1]:[W425 03:20:34.387296507 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank0]:[W425 03:20:34.390037688 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank6]:[W425 03:20:34.417090780 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank2]:[W425 03:20:34.427532891 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0425 03:20:36.256000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135695 closing signal SIGTERM
+W0425 03:20:36.257000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135696 closing signal SIGTERM
+W0425 03:20:36.257000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135698 closing signal SIGTERM
+W0425 03:20:36.257000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135699 closing signal SIGTERM
+W0425 03:20:36.257000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135700 closing signal SIGTERM
+W0425 03:20:36.258000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135701 closing signal SIGTERM
+W0425 03:20:36.258000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135702 closing signal SIGTERM
+E0425 03:20:37.186000 135551 site-packages/torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 2 (pid: 135697) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "/usr/local/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1396, in launch_command
+    multi_gpu_launcher(args)
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+scripts/gemma4_opt/train_fsdp2_cp.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 135695)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 135696)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 135698)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[4]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 135699)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[5]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 135700)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[6]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 135701)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[7]:
+  time      : 2026-04-25_03:20:37
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 7 (local_rank: 7)
+  exitcode  : 1 (pid: 135702)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-04-25_03:20:36
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 135697)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

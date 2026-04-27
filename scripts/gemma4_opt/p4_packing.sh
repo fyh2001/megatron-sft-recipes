@@ -20,7 +20,7 @@
 # truncation=right, USE_LIGER=true (silent until P5).
 set -euo pipefail
 
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p4_packing"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p4_packing"
 mkdir -p "${OUT_ROOT}"
 ATTEMPTS_FILE="${OUT_ROOT}/attempts.md"
 if [ ! -f "${ATTEMPTS_FILE}" ]; then

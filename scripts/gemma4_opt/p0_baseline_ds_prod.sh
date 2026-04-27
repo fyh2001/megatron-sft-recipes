@@ -13,11 +13,11 @@
 # SP=2, MBS=1 grad_accum=16 (GBS=64), AC=on, overlap_comm=false, bucket=5e7, etc.
 #
 # Expected wall: ~20 min for 40 optimizer steps (each step = 16 micro-steps).
-# Output: /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_NN_*/
+# Output: /home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_ds_prod/run_NN_*/
 set -euo pipefail
 
 RUN_LABEL="${RUN_LABEL:-first_try}"
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_ds_prod"
 RUN_DIR="${OUT_ROOT}/run_$(date +%Y%m%d_%H%M%S)_${RUN_LABEL}"
 mkdir -p "${RUN_DIR}"
 

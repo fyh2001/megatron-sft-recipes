@@ -1,0 +1,1 @@
+FAILED: mixed DTensor/Tensor in SDPA during CP context — gemma4 auto-created attention_mask tensor not wrapped in CP DTensor

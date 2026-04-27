@@ -74,7 +74,7 @@
 # Expected wall: ~25 min for 40 opt-steps (16 micros × ~2 s/micro × 40 = 21 min,
 # plus ~3 min for model load + setup).
 #
-# Output: /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_train_align/run_NN_*/
+# Output: /home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_train_align/run_NN_*/
 #   ├── cmd.sh                 (this script, copied)
 #   ├── stdout.log             (full tee'd log)
 #   ├── STATUS                 (SUCCESS/FAILED)
@@ -88,7 +88,7 @@
 set -euo pipefail
 
 RUN_LABEL="${RUN_LABEL:-mirror_ds}"
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_train_align"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_train_align"
 RUN_DIR="${OUT_ROOT}/run_$(date +%Y%m%d_%H%M%S)_${RUN_LABEL}"
 MAX_STEPS="${MAX_STEPS:-40}"
 # DS prod baseline ran with --max_steps 294 → warmup_ratio=0.05 = ~15 warmup

@@ -1,0 +1,8 @@
+label	mbs	gas	gbs	mode	status	step_ms	tok_per_s_per_gpu	peak_mem_gib	achieved_tflops_active	real_mfu_active_pct	loss_first_step	actual_total_wall_min
+mbs1_ga1_gbs4	1	1	4	native	ok	1758.11	9319.1	65.08	212.5	21.47	1.08032227	0.9
+mbs1_ga2_gbs8	1	2	8	offload	ok	19045.77	1720.5	76.53	39.2	3.96	1.73730469	9.5
+mbs2_ga1_gbs8	2	1	8	native	FAILED							
+mbs1_ga4_gbs16	1	4	16	offload	ok	23082.68	2839.2	76.58	64.7	6.54	1.47180176	11.5
+mbs2_ga2_gbs16	2	2	16	offload	FAILED							
+mbs1_ga8_gbs32	1	8	32	offload	ok	30594.2	4284.2	76.62	97.7	9.87	1.52638245	15.3
+mbs1_ga16_gbs64	1	16	64	offload	ok	45530.1	5757.6	76.62	131.3	13.27	1.52692413	22.8

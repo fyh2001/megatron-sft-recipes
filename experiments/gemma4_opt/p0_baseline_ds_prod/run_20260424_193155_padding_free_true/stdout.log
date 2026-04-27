@@ -1,0 +1,799 @@
+run sh: `/usr/local/bin/python -m torch.distributed.run --nproc_per_node 8 --master_port 29501 /usr/local/lib/python3.12/site-packages/swift/cli/sft.py --model /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it --model_type gemma4 --template gemma4 --output_dir /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/swift_out --tuner_type full --dataset /home/ubuntu/fyh/megatron-sft-recipes/sft-data/train.jsonl --load_from_cache_file false --truncation_strategy delete --split_dataset_ratio 0 --torch_dtype bfloat16 --max_steps 20 --per_device_train_batch_size 1 --learning_rate 2e-5 --gradient_accumulation_steps 16 --save_strategy no --logging_steps 1 --max_length 16384 --warmup_ratio 0.05 --dataloader_num_workers 4 --dataloader_pin_memory false --deepspeed /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/zero3_offload_nopin.json --sequence_parallel_size 2 --attn_impl flash_attention_3 --use_liger_kernel true --gradient_checkpointing true --torch_empty_cache_steps 10 --report_to tensorboard --save_only_model true --padding_free true`
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[INFO:swift] Successfully registered `/usr/local/lib/python3.12/site-packages/swift/dataset/data/dataset_info.json`.
+`torch_dtype` is deprecated! Use `dtype` instead!
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+`torch_dtype` is deprecated! Use `dtype` instead!
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+`torch_dtype` is deprecated! Use `dtype` instead!
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+[INFO:swift] rank: 0, local_rank: 0, world_size: 8, local_world_size: 8
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+`torch_dtype` is deprecated! Use `dtype` instead!
+[INFO:swift] Setting args.lazy_tokenize: True
+[INFO:swift] freeze_parameters: ['model.vision_tower', 'model.audio_tower', 'model.embed_vision', 'model.embed_audio']
+[INFO:swift] Using deepspeed: {'_description': "User's production DS config for gemma-4-26B-A4B-it (copied verbatim).", '_context': 'See scripts/gemma4_opt/p0_baseline_ds_prod.sh for the full swift sft command.', '_tightened_for_26B_MoE': 'overlap_comm:false + stage3_max_live_parameters:1e8 + reduce_bucket_size:5e7 + stage3_prefetch_bucket_size:5e7 — these trade NCCL overlap for lower peak memory, required for 26B MoE at SP=2 MBS=1.', 'fp16': {'enabled': 'auto', 'loss_scale': 0, 'loss_scale_window': 1000, 'initial_scale_power': 16, 'hysteresis': 2, 'min_loss_scale': 1}, 'bf16': {'enabled': 'auto'}, 'zero_optimization': {'stage': 3, 'offload_optimizer': {'device': 'cpu', 'pin_memory': False}, 'offload_param': {'device': 'cpu', 'pin_memory': False}, 'overlap_comm': False, 'contiguous_gradients': True, 'sub_group_size': 100000000.0, 'reduce_bucket_size': 50000000.0, 'stage3_prefetch_bucket_size': 50000000.0, 'stage3_param_persistence_threshold': 'auto', 'stage3_max_live_parameters': 100000000.0, 'stage3_max_reuse_distance': 1000000000.0, 'stage3_gather_16bit_weights_on_model_save': True}, 'gradient_accumulation_steps': 'auto', 'gradient_clipping': 'auto', 'steps_per_print': 2000, 'train_batch_size': 'auto', 'train_micro_batch_size_per_gpu': 'auto', 'wall_clock_breakdown': False}
+`torch_dtype` is deprecated! Use `dtype` instead!
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+[INFO:swift] output_dir: /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/swift_out/v0-20260425-033220
+[INFO:swift] args: SftArguments(
+acc_strategy=token,
+accelerator_config={'dispatch_batches': False},
+adalora_beta1=0.85,
+adalora_beta2=0.85,
+adalora_deltaT=1,
+adalora_init_r=12,
+adalora_orth_reg_weight=0.5,
+adalora_target_r=8,
+adalora_tfinal=0,
+adalora_tinit=0,
+adam_beta1=0.9,
+adam_beta2=0.95,
+adam_epsilon=1e-08,
+adapter_act=gelu,
+adapter_length=128,
+adapters=[],
+add_non_thinking_prefix=True,
+add_version=True,
+agent_template=None,
+aligner_lr=None,
+attn_impl=flash_attention_3,
+auto_find_batch_size=False,
+average_tokens_across_devices=True,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+bnb_4bit_compute_dtype=torch.bfloat16,
+bnb_4bit_quant_storage=None,
+bnb_4bit_quant_type=nf4,
+bnb_4bit_use_double_quant=True,
+boft_block_num=0,
+boft_block_size=4,
+boft_dropout=0.0,
+boft_n_butterfly_factor=1,
+cached_dataset=[],
+cached_val_dataset=[],
+callbacks=[],
+check_model=True,
+columns={},
+create_checkpoint_symlink=False,
+custom_dataset_info=[],
+custom_register_path=[],
+data_seed=42,
+dataloader_drop_last=False,
+dataloader_num_workers=4,
+dataloader_persistent_workers=False,
+dataloader_pin_memory=False,
+dataloader_prefetch_factor=None,
+dataset=['/home/ubuntu/fyh/megatron-sft-recipes/sft-data/train.jsonl'],
+dataset_num_proc=1,
+dataset_shuffle=True,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=18000000,
+debug=None,
+deepspeed={'_description': "User's production DS config for gemma-4-26B-A4B-it (copied verbatim).", '_context': 'See scripts/gemma4_opt/p0_baseline_ds_prod.sh for the full swift sft command.', '_tightened_for_26B_MoE': 'overlap_comm:false + stage3_max_live_parameters:1e8 + reduce_bucket_size:5e7 + stage3_prefetch_bucket_size:5e7 — these trade NCCL overlap for lower peak memory, required for 26B MoE at SP=2 MBS=1.', 'fp16': {'enabled': 'auto', 'loss_scale': 0, 'loss_scale_window': 1000, 'initial_scale_power': 16, 'hysteresis': 2, 'min_loss_scale': 1}, 'bf16': {'enabled': 'auto'}, 'zero_optimization': {'stage': 3, 'offload_optimizer': {'device': 'cpu', 'pin_memory': False}, 'offload_param': {'device': 'cpu', 'pin_memory': False}, 'overlap_comm': False, 'contiguous_gradients': True, 'sub_group_size': 100000000.0, 'reduce_bucket_size': 50000000.0, 'stage3_prefetch_bucket_size': 50000000.0, 'stage3_param_persistence_threshold': 'auto', 'stage3_max_live_parameters': 100000000.0, 'stage3_max_reuse_distance': 1000000000.0, 'stage3_gather_16bit_weights_on_model_save': True}, 'gradient_accumulation_steps': 'auto', 'gradient_clipping': 'auto', 'steps_per_print': 2000, 'train_batch_size': 'auto', 'train_micro_batch_size_per_gpu': 'auto', 'wall_clock_breakdown': False},
+deepspeed_autotp_size=None,
+device_groups=None,
+device_map=None,
+disable_tqdm=None,
+do_eval=False,
+do_predict=False,
+do_train=False,
+download_mode=reuse_dataset_if_exists,
+ds3_gather_for_generation=True,
+early_stop_interval=None,
+enable_channel_loss=False,
+enable_dft_loss=False,
+enable_jit_checkpoint=False,
+enable_thinking=None,
+eval_accumulation_steps=None,
+eval_dataset=[],
+eval_dataset_args=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_generation_config=None,
+eval_limit=None,
+eval_metric=None,
+eval_on_start=False,
+eval_steps=None,
+eval_strategy=no,
+eval_use_evalscope=False,
+eval_use_gather_object=False,
+experts_impl=None,
+external_plugins=[],
+extra_eval_args=None,
+fourier_n_frequency=2000,
+fourier_scaling=300.0,
+fp16=False,
+fp16_full_eval=False,
+freeze_aligner=True,
+freeze_llm=False,
+freeze_parameters=['model.vision_tower', 'model.audio_tower', 'model.embed_vision', 'model.embed_audio'],
+freeze_parameters_ratio=0.0,
+freeze_parameters_regex=None,
+freeze_vit=True,
+fsdp=[],
+fsdp_config=None,
+full_determinism=False,
+galore_cos_threshold=0.4,
+galore_gamma_proj=2,
+galore_optim_per_parameter=False,
+galore_proj_bits=4,
+galore_proj_group_size=256,
+galore_proj_quant=False,
+galore_proj_type=std,
+galore_quantization=False,
+galore_queue_size=5,
+galore_rank=128,
+galore_scale=1.0,
+galore_target_modules=None,
+galore_update_proj_gap=50,
+galore_with_embedding=False,
+generation_config=None,
+generation_max_length=None,
+generation_num_beams=None,
+gradient_accumulation_steps=16,
+gradient_checkpointing=True,
+gradient_checkpointing_kwargs=None,
+greater_is_better=False,
+group_by_length=False,
+hqq_axis=None,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=None,
+hub_revision=None,
+hub_strategy=every_save,
+hub_token=<HUB_TOKEN>,
+ignore_args_error=False,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_num_input_tokens_seen=False,
+init_strategy=None,
+init_weights=True,
+interleave_prob=None,
+label_names=None,
+label_smoothing_factor=0.0,
+lazy_tokenize=True,
+learning_rate=2e-05,
+length_column_name=length,
+liger_kernel_config=None,
+lisa_activated_layers=0,
+lisa_step_interval=20,
+llamapro_num_groups=None,
+llamapro_num_new_blocks=4,
+load_args=False,
+load_best_model_at_end=False,
+load_data_args=False,
+load_from_cache_file=False,
+local_rank=0,
+local_repo_path=None,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/swift_out/v0-20260425-033220/runs,
+logging_first_step=True,
+logging_nan_inf_filter=True,
+logging_steps=1,
+logging_strategy=steps,
+logprobs=False,
+lora_alpha=32,
+lora_bias=none,
+lora_dropout=0.05,
+lora_dtype=None,
+lora_ga_batch_size=2,
+lora_ga_direction=ArB2r,
+lora_ga_iters=2,
+lora_ga_max_length=1024,
+lora_ga_scale=stable,
+lora_ga_stable_gamma=16,
+lora_rank=8,
+lorap_lr_ratio=None,
+loss_scale=default,
+loss_type=None,
+lr_scheduler_kwargs=None,
+lr_scheduler_type=cosine,
+max_epochs=None,
+max_grad_norm=1.0,
+max_length=16384,
+max_memory={},
+max_model_len=None,
+max_new_tokens=64,
+max_pixels=None,
+max_shard_size=5GB,
+max_steps=20,
+metric_for_best_model=loss,
+model=/home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it,
+model_author=None,
+model_kwargs={},
+model_name=None,
+model_revision=None,
+model_type=gemma4,
+modules_to_save=[],
+neftune_noise_alpha=None,
+new_special_tokens=[],
+norm_bbox=None,
+num_beams=1,
+num_labels=None,
+num_train_epochs=3.0,
+optim=adamw_torch_fused,
+optim_args=None,
+optim_target_modules=None,
+optimizer=None,
+output_dir=/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/swift_out/v0-20260425-033220,
+packing=False,
+packing_length=None,
+packing_num_proc=1,
+padding_free=True,
+padding_side=right,
+parallelism_config=None,
+per_device_eval_batch_size=1,
+per_device_train_batch_size=1,
+predict_with_generate=False,
+prediction_loss_only=False,
+problem_type=None,
+project=huggingface,
+push_to_hub=False,
+quant_bits=None,
+quant_method=None,
+ray_exp_name=None,
+reft_args=None,
+reft_intervention_type=LoreftIntervention,
+reft_layer_key=None,
+reft_layers=None,
+reft_rank=4,
+remove_unused_columns=True,
+repetition_penalty=None,
+report_to=['tensorboard'],
+response_prefix=None,
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+resume_only_model=False,
+rope_scaling=None,
+router_aux_loss_coef=0.0,
+run_name=/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_ds_prod/run_20260424_193155_padding_free_true/swift_out/v0-20260425-033220,
+safe_serialization=True,
+save_on_each_node=False,
+save_only_model=True,
+save_steps=500,
+save_strategy=no,
+save_total_limit=None,
+seed=42,
+sequence_parallel_size=2,
+shuffle_buffer_size=1000,
+skip_memory_metrics=True,
+sortish_sampler=False,
+split_dataset_ratio=0.0,
+stop_words=[],
+stopping_strategy=first_exhausted,
+stream=False,
+streaming=False,
+strict=False,
+structured_outputs_regex=None,
+swanlab_email_language=zh,
+swanlab_exp_name=None,
+swanlab_mode=cloud,
+swanlab_notification_method=None,
+swanlab_project=ms-swift,
+swanlab_receiver_email=None,
+swanlab_secret=None,
+swanlab_sender_email=None,
+swanlab_smtp_port=None,
+swanlab_smtp_server=None,
+swanlab_token=<SWANLAB_TOKEN>,
+swanlab_webhook_url=None,
+swanlab_workspace=None,
+system=None,
+target_modules=['all-linear'],
+target_parameters=None,
+target_regex=None,
+task_type=causal_lm,
+temperature=0.0,
+template=gemma4,
+template_backend=swift,
+tf32=None,
+top_k=None,
+top_logprobs=None,
+top_p=None,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_dtype=torch.bfloat16,
+torch_empty_cache_steps=10,
+trackio_space_id=trackio,
+train_dataloader_shuffle=True,
+train_sampling_strategy=random,
+trainable_parameters=[],
+trainable_parameters_regex=None,
+truncation_strategy=delete,
+tuner_backend=peft,
+tuner_type=full,
+use_cache=False,
+use_chat_template=True,
+use_cpu=False,
+use_dora=False,
+use_flash_ckpt=False,
+use_galore=False,
+use_hf=False,
+use_liger_kernel=True,
+use_logits_to_keep=None,
+use_ray=False,
+use_rslora=False,
+use_swift_lora=False,
+val_dataset=[],
+val_dataset_shuffle=False,
+vera_d_initial=0.1,
+vera_dropout=0.0,
+vera_projection_prng_key=0,
+vera_rank=256,
+vit_gradient_checkpointing=False,
+vit_lr=None,
+warmup_ratio=0.05,
+warmup_steps=0,
+weight_decay=0.1,
+zero_hpz_partition_size=None,
+)
+[INFO:swift] Global seed set to 42
+[INFO:swift] attn_impl: flash_attention_3
+[INFO:swift] model_kwargs: {'device_map': None, 'dtype': torch.bfloat16}
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.vision_tower.std_scale                      | MISSING | 
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[1mGemma4ForConditionalGeneration LOAD REPORT[0m from: /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it
+Key                                               | Status  | 
+--------------------------------------------------+---------+-
+model.language_model.layers.{0...29}.layer_scalar | MISSING | 
+model.vision_tower.std_bias                       | MISSING | 
+model.vision_tower.std_scale                      | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+[INFO:swift] Setting z3_leaf_modules: [<class 'transformers.models.gemma4.modeling_gemma4.Gemma4TextExperts'>]
+[INFO:swift] model_info: ModelInfo(model_type='gemma4', model_dir='/home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it', torch_dtype=torch.bfloat16, max_model_len=262144, quant_method=None, quant_bits=None, rope_scaling=None, is_moe_model=True, is_multimodal=True, config=Gemma4Config {
+  "architectures": [
+    "Gemma4ForConditionalGeneration"
+  ],
+  "audio_config": null,
+  "audio_token_id": 258881,
+  "boa_token_id": 256000,
+  "boi_token_id": 255999,
+  "dtype": "bfloat16",
+  "eoa_token_id": 258883,
+  "eoa_token_index": 258883,
+  "eoi_token_id": 258882,
+  "eos_token_id": [
+    1,
+    106
+  ],
+  "hidden_size": 2816,
+  "image_token_id": 258880,
+  "initializer_range": 0.02,
+  "model_type": "gemma4",
+  "text_config": {
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "attention_k_eq_v": true,
+    "bos_token_id": 2,
+    "dtype": "bfloat16",
+    "enable_moe_block": true,
+    "eos_token_id": 1,
+    "final_logit_softcapping": 30.0,
+    "global_head_dim": 512,
+    "head_dim": 256,
+    "hidden_activation": "gelu_pytorch_tanh",
+    "hidden_size": 2816,
+    "hidden_size_per_layer_input": 0,
+    "initializer_range": 0.02,
+    "intermediate_size": 2112,
+    "layer_types": [
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "full_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "sliding_attention",
+      "full_attention"
+    ],
+    "max_position_embeddings": 262144,
+    "model_type": "gemma4_text",
+    "moe_intermediate_size": 704,
+    "num_attention_heads": 16,
+    "num_experts": 128,
+    "num_global_key_value_heads": 2,
+    "num_hidden_layers": 30,
+    "num_key_value_heads": 8,
+    "num_kv_shared_layers": 0,
+    "pad_token_id": 0,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "full_attention": {
+        "partial_rotary_factor": 0.25,
+        "rope_theta": 1000000.0,
+        "rope_type": "proportional"
+      },
+      "sliding_attention": {
+        "rope_theta": 10000.0,
+        "rope_type": "default"
+      }
+    },
+    "sliding_window": 1024,
+    "tie_word_embeddings": true,
+    "top_k_experts": 8,
+    "use_bidirectional_attention": "vision",
+    "use_cache": true,
+    "use_double_wide_mlp": false,
+    "vocab_size": 262144,
+    "vocab_size_per_layer_input": 262144
+  },
+  "tie_word_embeddings": true,
+  "transformers_version": "5.5.4",
+  "video_token_id": 258884,
+  "vision_config": {
+    "_name_or_path": "",
+    "architectures": null,
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "chunk_size_feed_forward": 0,
+    "default_output_length": 280,
+    "dtype": "bfloat16",
+    "global_head_dim": 72,
+    "head_dim": 72,
+    "hidden_activation": "gelu_pytorch_tanh",
+    "hidden_size": 1152,
+    "id2label": {
+      "0": "LABEL_0",
+      "1": "LABEL_1"
+    },
+    "initializer_range": 0.02,
+    "intermediate_size": 4304,
+    "is_encoder_decoder": false,
+    "label2id": {
+      "LABEL_0": 0,
+      "LABEL_1": 1
+    },
+    "max_position_embeddings": 131072,
+    "model_type": "gemma4_vision",
+    "num_attention_heads": 16,
+    "num_hidden_layers": 27,
+    "num_key_value_heads": 16,
+    "output_attentions": false,
+    "output_hidden_states": false,
+    "patch_size": 16,
+    "pooling_kernel_size": 3,
+    "position_embedding_size": 10240,
+    "problem_type": null,
+    "return_dict": true,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "rope_theta": 100.0,
+      "rope_type": "default"
+    },
+    "standardize": true,
+    "use_clipped_linears": false
+  },
+  "vision_soft_tokens_per_image": 280
+}
+, task_type='causal_lm', num_labels=None)
+[INFO:swift] model.generation_config: GenerationConfig {
+  "bos_token_id": 2,
+  "do_sample": false,
+  "eos_token_id": [
+    1,
+    106,
+    50
+  ],
+  "length_penalty": 1.0,
+  "max_new_tokens": 64,
+  "num_beams": 1,
+  "pad_token_id": 0,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0
+}
+
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank1]:     sft_main()
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank1]:     return SwiftSft(args).main()
+[rank1]:            ^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank1]:     self._prepare_template()
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank1]:     return func(self, *args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank1]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank1]: ValueError: Template `gemma4` does not support padding free or packing.
+[INFO:swift] default_system: None
+[INFO:swift] max_length: 16384
+[INFO:swift] response_prefix: ''
+[INFO:swift] agent_template: react_en
+[INFO:swift] norm_bbox: norm1000
+[INFO:swift] Setting ROOT_IMAGE_DIR: None. You can adjust this hyperparameter through the environment variable: `ROOT_IMAGE_DIR`.
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank0]:     sft_main()
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank0]:     return SwiftSft(args).main()
+[rank0]:            ^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank0]:     self._prepare_template()
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank0]:     return func(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank0]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank0]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank6]:     sft_main()
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank6]:     return SwiftSft(args).main()
+[rank6]:            ^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank6]:     self._prepare_template()
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank6]:     return func(self, *args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank6]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank6]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank7]:     sft_main()
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank7]:     return SwiftSft(args).main()
+[rank7]:            ^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank7]:     self._prepare_template()
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank7]:     return func(self, *args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank7]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank7]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank5]:     sft_main()
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank5]:     return SwiftSft(args).main()
+[rank5]:            ^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank5]:     self._prepare_template()
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank5]:     return func(self, *args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank5]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank5]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank2]:     sft_main()
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank2]:     return SwiftSft(args).main()
+[rank2]:            ^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank2]:     self._prepare_template()
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank2]:     return func(self, *args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank2]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank2]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank4]:     sft_main()
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank4]:     return SwiftSft(args).main()
+[rank4]:            ^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank4]:     self._prepare_template()
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank4]:     return func(self, *args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank4]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank4]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/swift/cli/sft.py", line 20, in <module>
+[rank3]:     sft_main()
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 354, in sft_main
+[rank3]:     return SwiftSft(args).main()
+[rank3]:            ^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 30, in __init__
+[rank3]:     self._prepare_template()
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/swift/ray/base.py", line 168, in wrapper
+[rank3]:     return func(self, *args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/swift/pipelines/train/sft.py", line 75, in _prepare_template
+[rank3]:     raise ValueError(f'Template `{args.template}` does not support padding free or packing.')
+[rank3]: ValueError: Template `gemma4` does not support padding free or packing.
+[rank0]:[W425 03:32:40.578581701 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank1]:[W425 03:32:40.621136564 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank4]:[W425 03:32:41.622112039 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank2]:[W425 03:32:41.622748168 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank6]:[W425 03:32:41.623131343 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0425 03:32:42.562000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139468 closing signal SIGTERM
+W0425 03:32:42.563000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139470 closing signal SIGTERM
+W0425 03:32:42.563000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139471 closing signal SIGTERM
+W0425 03:32:42.564000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139472 closing signal SIGTERM
+W0425 03:32:42.564000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139473 closing signal SIGTERM
+W0425 03:32:42.564000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139474 closing signal SIGTERM
+W0425 03:32:42.564000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 139475 closing signal SIGTERM
+E0425 03:32:43.593000 139402 site-packages/torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 1 (pid: 139469) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 995, in <module>
+    main()
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 362, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 991, in main
+    run(args)
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/usr/local/lib/python3.12/site-packages/swift/cli/sft.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 0 (local_rank: 0)
+  exitcode  : -15 (pid: 139468)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139468
+[2]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 2 (local_rank: 2)
+  exitcode  : -15 (pid: 139470)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139470
+[3]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 3 (local_rank: 3)
+  exitcode  : -15 (pid: 139471)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139471
+[4]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 4 (local_rank: 4)
+  exitcode  : -15 (pid: 139472)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139472
+[5]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 5 (local_rank: 5)
+  exitcode  : -15 (pid: 139473)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139473
+[6]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 6 (local_rank: 6)
+  exitcode  : -15 (pid: 139474)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139474
+[7]:
+  time      : 2026-04-25_03:32:43
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 7 (local_rank: 7)
+  exitcode  : -15 (pid: 139475)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 139475
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-04-25_03:32:42
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 139469)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

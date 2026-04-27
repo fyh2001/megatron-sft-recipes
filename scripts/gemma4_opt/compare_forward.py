@@ -33,8 +33,13 @@ def main():
     print(f"Loss:  ref={rl:.6f}  test={tl:.6f}  diff={tl - rl:+.6f}  rel_err={abs(tl - rl)/abs(rl):.3e}")
     print()
 
-    # Logits — first 10 positions
+    # Logits — first/last 10 positions are optional (slim dumps drop them);
+    # mean/std are sufficient to call FSDP2/DS forward equivalence.
     for k in ["logits_first10", "logits_last10", "logits_mean", "logits_std"]:
+        if k not in ref.files or k not in test.files:
+            print(f"{k:>18}  skipped (missing in slim dump)")
+            print()
+            continue
         a = ref[k].astype(np.float64)
         b = test[k].astype(np.float64)
         if a.shape != b.shape:

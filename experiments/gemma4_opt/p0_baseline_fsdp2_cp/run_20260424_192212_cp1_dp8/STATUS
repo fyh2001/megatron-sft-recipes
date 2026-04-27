@@ -1,0 +1,1 @@
+FAILED: OOM at cp=1 dp=8 — gemma4-26B-A4B seq=16384 on H100 80GB without CPU offload is too tight (77/80 GB used)

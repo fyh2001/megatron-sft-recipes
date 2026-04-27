@@ -1,0 +1,1 @@
+FAILED — torch._inductor.InductorError: TF32 legacy/new API conflict (plan §6 predicted this exact bug from qwen3.5 walkthrough §7.1). Will try one-shot mitigation: pin TF32 via torch.set_float32_matmul_precision early in sitecustomize.

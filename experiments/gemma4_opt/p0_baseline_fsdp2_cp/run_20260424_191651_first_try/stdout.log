@@ -1,0 +1,225 @@
+The following values were not passed to `accelerate launch` and had defaults used instead:
+		More than one GPU was found, enabling multi-GPU training.
+		If this was unintended please pass in `--num_processes=1`.
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+`torch_dtype` is deprecated! Use `dtype` instead!
+ParallelismConfig: ParallelismConfig(
+ 	dp_replicate_size=1,
+	dp_shard_size=4,
+	tp_size=1,
+	cp_size=2,
+	cp_backend=torch,
+	sp_size=1,
+	sp_backend=deepspeed,
+	total_size=8
+	tp_handler=None,
+	cp_handler=TorchContextParallelConfig(cp_comm_strategy='allgather'))
+
+FSDP2 plugin activation_checkpointing=True, cpu_ram_efficient_loading=False
+Loading model from /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it with sdpa + bf16 ...
+`torch_dtype` is deprecated! Use `dtype` instead!
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank2]:     main()
+[rank2]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank2]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank2]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank2]:     return model_class.from_pretrained(
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank2]:     model = cls(config, *model_args, **model_kwargs)
+[rank2]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank4]:     main()
+[rank4]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank4]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank4]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank4]:     return model_class.from_pretrained(
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank4]:     model = cls(config, *model_args, **model_kwargs)
+[rank4]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+`torch_dtype` is deprecated! Use `dtype` instead!
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank0]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank0]:     return model_class.from_pretrained(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank0]:     model = cls(config, *model_args, **model_kwargs)
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank2]:[W425 03:17:10.195026278 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank3]:     main()
+[rank3]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank3]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank3]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank3]:     return model_class.from_pretrained(
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank3]:     model = cls(config, *model_args, **model_kwargs)
+[rank3]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank1]:     main()
+[rank1]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank1]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank1]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank1]:     return model_class.from_pretrained(
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank1]:     model = cls(config, *model_args, **model_kwargs)
+[rank1]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank6]:     main()
+[rank6]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank6]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank6]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank6]:     return model_class.from_pretrained(
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank6]:     model = cls(config, *model_args, **model_kwargs)
+[rank6]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank7]:     main()
+[rank7]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank7]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank7]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank7]:     return model_class.from_pretrained(
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank7]:     model = cls(config, *model_args, **model_kwargs)
+[rank7]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 244, in <module>
+[rank5]:     main()
+[rank5]:   File "/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/train_fsdp2_cp.py", line 146, in main
+[rank5]:     model = AutoModelForImageTextToText.from_pretrained(
+[rank5]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 387, in from_pretrained
+[rank5]:     return model_class.from_pretrained(
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4092, in from_pretrained
+[rank5]:     model = cls(config, *model_args, **model_kwargs)
+[rank5]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]: TypeError: Gemma4ForConditionalGeneration.__init__() got an unexpected keyword argument 'use_cache'
+[rank4]:[W425 03:17:10.343742778 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank0]:[W425 03:17:11.593556250 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank1]:[W425 03:17:11.711019792 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[rank6]:[W425 03:17:11.725256003 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0425 03:17:11.219000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135391 closing signal SIGTERM
+W0425 03:17:11.220000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135392 closing signal SIGTERM
+W0425 03:17:11.220000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135394 closing signal SIGTERM
+W0425 03:17:11.221000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135395 closing signal SIGTERM
+W0425 03:17:11.221000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135396 closing signal SIGTERM
+W0425 03:17:11.222000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135397 closing signal SIGTERM
+W0425 03:17:11.222000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 135398 closing signal SIGTERM
+E0425 03:17:11.837000 135247 site-packages/torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 2 (pid: 135393) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "/usr/local/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1396, in launch_command
+    multi_gpu_launcher(args)
+  File "/usr/local/lib/python3.12/site-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/run.py", line 982, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 170, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/torch/distributed/launcher/api.py", line 317, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+scripts/gemma4_opt/train_fsdp2_cp.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 0 (local_rank: 0)
+  exitcode  : -15 (pid: 135391)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135391
+[2]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 1 (local_rank: 1)
+  exitcode  : -15 (pid: 135392)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135392
+[3]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 3 (local_rank: 3)
+  exitcode  : -15 (pid: 135394)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135394
+[4]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 135395)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[5]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 5 (local_rank: 5)
+  exitcode  : -15 (pid: 135396)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135396
+[6]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 6 (local_rank: 6)
+  exitcode  : -15 (pid: 135397)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135397
+[7]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 7 (local_rank: 7)
+  exitcode  : -15 (pid: 135398)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 135398
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-04-25_03:17:11
+  host      : am4g1r39bm1.mgt.ams4.paperspace.com
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 135393)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

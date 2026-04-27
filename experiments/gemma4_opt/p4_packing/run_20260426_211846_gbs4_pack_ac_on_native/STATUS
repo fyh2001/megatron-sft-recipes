@@ -1,0 +1,1 @@
+FAILED — swift Gemma4Template.support_padding_free=None (defaults False for VLM). Fixed in sitecustomize patch (4): force True for text-only training.

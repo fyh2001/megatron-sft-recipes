@@ -12,7 +12,13 @@ This script is launched in 3 modes:
   torchrun --nproc_per_node 8 forward_align_test.py --mode fsdp2
   torchrun --nproc_per_node 8 forward_align_test.py --mode ds
 
-Output: <out_dir>/<mode>_run<N>.npz  with keys {logits_first10, logits_last10, loss}
+Output: <out_dir>/<mode>_run<N>.npz  with keys
+  {logits_first10, logits_last10, logits_mean, logits_std, loss, config}
+
+After running all 5 modes (single×2 + fsdp2 + ds×2) the dump is ~111 MB, too
+large for git.  Run `python slim_forward_align_npz.py` afterwards to produce
+a slim copy at <out_dir>_slim/ that drops first10/last10 (~11 MB total) and
+is suitable for committal.  compare_forward.py accepts both formats.
 
 Determinism settings:
   - torch.manual_seed + torch.cuda.manual_seed_all
@@ -44,7 +50,7 @@ def parse_args():
     p.add_argument("--model-path", default="/home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it")
     p.add_argument("--seq-len", type=int, default=2048,
                    help="short seq to fit single-gpu baseline; 2048 is plenty for fwd alignment")
-    p.add_argument("--out-dir", default="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_forward_align")
+    p.add_argument("--out-dir", default="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_forward_align")
     p.add_argument("--run-id", type=int, default=1)
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()

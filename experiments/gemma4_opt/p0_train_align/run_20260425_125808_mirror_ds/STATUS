@@ -1,0 +1,1 @@
+FAILED exit_code=1 — backward OOM at 76.08 GB peak, 3.20 GB tried (smaller than runs 02-05's 4.27 GB confirms mem_efficient SDPA is now active and saved ~5 GB on global-attn matrices). Need ~10-20 GB more headroom: run_07 adds back fsdp 'offload' (saves fp32 master upcast ~13 GB to CPU) + activation_cpu_offload=true (saves AC layer-input residents ~3-5 GB).

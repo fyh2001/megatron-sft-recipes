@@ -1,0 +1,1 @@
+FAILED exit_code=1 — swift FSDP2+SHARDED_STATE_DICT bans --save_only_model true; gpu_monitor/dcgm_scrape silently no-op'd (host has python3, not python). Both fixed in run_02.

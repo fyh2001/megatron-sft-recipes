@@ -1,0 +1,1 @@
+{"model_parameter_info": "Gemma4ForConditionalGeneration: 25805.9339M Params (25233.1418M Trainable [97.7804%]), 0.0031M Buffers.", "last_model_checkpoint": null, "best_model_checkpoint": null, "best_metric": null, "global_step": 0, "log_history": [], "memory": null}

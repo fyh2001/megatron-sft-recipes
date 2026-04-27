@@ -48,7 +48,7 @@
 #   └── logging.jsonl       (symlink into v*-* dir)
 set -euo pipefail
 
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p1_gbs_sweep"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p1_gbs_sweep"
 mkdir -p "${OUT_ROOT}"
 ATTEMPTS_FILE="${OUT_ROOT}/attempts.md"
 if [ ! -f "${ATTEMPTS_FILE}" ]; then

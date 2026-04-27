@@ -1,0 +1,1 @@
+FAILED — gemma3 causal_forward references self.config.final_logit_softcapping (gemma4 has no softcap). Fixed in liger_gemma4_patch.py: switch to gemma3 multimodal_forward (uses getattr fallback for softcap, uses config.text_config nested access — matches gemma4 VLM structure).

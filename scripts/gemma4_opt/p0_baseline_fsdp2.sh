@@ -11,11 +11,11 @@
 #   - --use_liger_kernel true (silent no-op on gemma4 until P5 adds dispatch)
 #
 # Expected wall: ~10 min for 40 steps incl. setup.
-# Output: /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_fsdp2/run_NN_*/
+# Output: /home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_fsdp2/run_NN_*/
 set -euo pipefail
 
 RUN_LABEL="${RUN_LABEL:-first_try}"
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_fsdp2"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_fsdp2"
 RUN_DIR="${OUT_ROOT}/run_$(date +%Y%m%d_%H%M%S)_${RUN_LABEL}"
 mkdir -p "${RUN_DIR}"
 

@@ -87,7 +87,7 @@ megatron-sft-recipes/scripts/gemma4_opt/     # 每期的启动脚本落盘（可
     ...
     p8_gbs_resweep.sh
 
-megatron_output/gemma4_opt/
+experiments/gemma4_opt/
     p0_baseline_fsdp2/                       # Phase 0 FSDP2 default
         attempts.md                          # 本期所有 run（成功/失败）的时间线索引
         run_01_first_try/                    # 第一次尝试（可能失败）
@@ -179,7 +179,7 @@ TOTAL_STEPS=40 WARMUP_BENCH=5
 复制用户提供的命令，只改：
 - `--model` 指向本机路径
 - `--dataset` 指向 `megatron-sft-recipes/sft-data/train.jsonl`
-- `--output_dir` 指向 `megatron_output/gemma4_opt/p0_baseline_ds_prod/`
+- `--output_dir` 指向 `experiments/gemma4_opt/p0_baseline_ds_prod/`
 - 加 `--max_steps 40`（本来 `--num_train_epochs 1`，这里截短做 bench）
 - `--save_strategy no`（免得 save checkpoint 污染 step time 测量）
 
@@ -244,7 +244,7 @@ TOTAL_STEPS=40 WARMUP_BENCH=5
 - 每个 run 目录下的 `cmd.sh` 是**该次尝试的原命令**（含失败那次的），和 `p${N}_${axis}.sh` 的关系是"最终成功版本" vs "中间尝试"
 
 ### (b) 数据产物：实测原件
-- `megatron_output/gemma4_opt/p${N}_${axis}/run_NN_<label>/` 每个 run（**包括失败的**）完整保留：`cmd.sh` + `stdout.log` + `STATUS` + 用到的 config 副本
+- `experiments/gemma4_opt/p${N}_${axis}/run_NN_<label>/` 每个 run（**包括失败的**）完整保留：`cmd.sh` + `stdout.log` + `STATUS` + 用到的 config 副本
 - 成功 run 追加：`report.json` + `dcgm_tc.tsv` + `v0-*/logging.jsonl`（+ 关键期加 nsys）
 - `attempts.md` 时间线索引，每行 `run_01/ · 2026-XX-XX HH:MM · FAILED · OOM at step 3，peak mem 79.8 GB` 这种格式
 
@@ -267,8 +267,8 @@ TOTAL_STEPS=40 WARMUP_BENCH=5
 ### (d) 汇总产物（每期完成都要更新）
 - `gemma4_phase_delta_summary.md` 追加一行：`P${N} · <axis> · step_ms · tokens/s/GPU · 真 MFU · wall · vs P0`
 - `gemma4_debug_log.md` 如果本期有错误，复制 walkthrough 里的 Debug 记录到集中册（方便后人翻"所有踩过的坑"）
-- `megatron_output/gemma4_opt/ALL_COMMANDS.md` 追加本期所有 run 的命令（粘贴可复现）
-- `megatron_output/gemma4_opt/_summary.md` 每期一行 total 进度
+- `experiments/gemma4_opt/ALL_COMMANDS.md` 追加本期所有 run 的命令（粘贴可复现）
+- `experiments/gemma4_opt/_summary.md` 每期一行 total 进度
 
 **真 MFU 用 nsys 实测的期**（避免每期都跑 nsys 浪费时间）：
 - 必跑：P0（两后端 baseline）、P1（peak + 最小/最大 GBS）、P4（packing）、P5（Liger）、P7（最终态）、P8（复核）
@@ -351,9 +351,9 @@ TOTAL_STEPS=40 WARMUP_BENCH=5
 - `scripts/benchmark/run_with_nsys.sh` + `nsys_classify.py` + `parse_swift_log.py` — 从 Qwen3.5 项目挪过来落进 repo 的辅助脚本
 
 ### 原始数据归档（可审计）
-- `megatron_output/gemma4_opt/p*/run_*/` 每次 run（成功 + 失败）的 `cmd.sh` + `stdout.log` + `STATUS` + config 副本
-- `megatron_output/gemma4_opt/ALL_COMMANDS.md` 所有命令的粘贴库
-- `megatron_output/gemma4_opt/_summary.md` 进度总览
+- `experiments/gemma4_opt/p*/run_*/` 每次 run（成功 + 失败）的 `cmd.sh` + `stdout.log` + `STATUS` + config 副本
+- `experiments/gemma4_opt/ALL_COMMANDS.md` 所有命令的粘贴库
+- `experiments/gemma4_opt/_summary.md` 进度总览
 
 ---
 

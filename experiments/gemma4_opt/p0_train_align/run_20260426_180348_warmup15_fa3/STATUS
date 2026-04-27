@@ -1,0 +1,1 @@
+FAILED exit_code=1 — OOM at model load (48 GB used, 2 MB free). Not FA3's fault — run_11's torchrun children processes (PIDs 1601405-1601412) survived past run_11 completion (FSDP2 destroy_process_group warnings hinted at this), still holding 30 GB/rank. Killed them via 'docker exec fsdp_sft pkill -9'. Re-launching as run_13.

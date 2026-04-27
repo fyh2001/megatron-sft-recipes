@@ -12,7 +12,7 @@
 
 ### P0-1 `Could not find the transformer layer class Gemma4AudioLayer in the model`
 
-**现象**（[run_20260424_184213_first_try/stdout.log](../megatron_output/gemma4_opt/p0_baseline_fsdp2/run_20260424_184213_first_try/stdout.log)）：
+**现象**（[run_20260424_184213_first_try/stdout.log](../experiments/gemma4_opt/p0_baseline_fsdp2/run_20260424_184213_first_try/stdout.log)）：
 
 所有 8 个 rank 初始化阶段集体抛：
 ```

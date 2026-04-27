@@ -1,0 +1,1 @@
+{"loss": 1.90203857, "grad_norm": 296.0, "learning_rate": 3.33e-06, "token_acc": 0.6436721, "epoch": 0.00170032, "global_step/max_steps": "1/30", "elapsed_time": "21s", "remaining_time": "9m 58s", "tokens_per_gpu_per_sec": 544.1, "tokens_global_per_sec": 4352.9, "tokens_this_step": 22425, "memory(GiB)": 75.75, "train_speed(s/it)": 20.607111}

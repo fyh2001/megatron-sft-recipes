@@ -57,7 +57,7 @@ def parse_args():
     p.add_argument("--warmup-steps", type=int, default=5)
     p.add_argument("--activation-checkpointing", action="store_true", default=True)
     p.add_argument("--no-activation-checkpointing", dest="activation_checkpointing", action="store_false")
-    p.add_argument("--output-dir", default="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_fsdp2_cp/run")
+    p.add_argument("--output-dir", default="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_fsdp2_cp/run")
     p.add_argument("--metrics-out", default=None, help="Path to dump per-step metrics JSONL")
     return p.parse_args()
 

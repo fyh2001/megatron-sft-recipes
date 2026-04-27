@@ -4,7 +4,7 @@
 Usage:
     python3 build_p1_summary.py [<p1_root_dir>]
 
-Default root: /home/ubuntu/fyh/megatron_output/gemma4_opt/p1_gbs_sweep
+Default root: /home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p1_gbs_sweep
 
 Reads each run_*/report.json, pulls key throughput + memory numbers, and writes:
     <root>/_summary.md   - markdown table
@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 def main():
-    root = Path(sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/fyh/megatron_output/gemma4_opt/p1_gbs_sweep")
+    root = Path(sys.argv[1] if len(sys.argv) > 1 else "/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p1_gbs_sweep")
     if not root.exists():
         print(f"[err] root not found: {root}")
         return 1

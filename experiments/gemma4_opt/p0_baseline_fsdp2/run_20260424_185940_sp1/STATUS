@@ -1,0 +1,1 @@
+FAILED: FA3 also max head_dim=256; swift/transformers gemma4 global layers can't use FA2 or FA3

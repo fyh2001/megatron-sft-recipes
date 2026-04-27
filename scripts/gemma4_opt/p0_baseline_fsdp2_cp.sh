@@ -8,11 +8,11 @@
 #   cp_size=2 (equivalent to Ulysses SP=2), dp_shard=4, seq=16384, MBS=1
 #   AC=on (gemma4 26B MoE is too big for AC=off even with CP)
 #
-# Output: /home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_fsdp2_cp/run_NN_*/
+# Output: /home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_fsdp2_cp/run_NN_*/
 set -euo pipefail
 
 RUN_LABEL="${RUN_LABEL:-first_try}"
-OUT_ROOT="/home/ubuntu/fyh/megatron_output/gemma4_opt/p0_baseline_fsdp2_cp"
+OUT_ROOT="/home/ubuntu/fyh/megatron-sft-recipes/experiments/gemma4_opt/p0_baseline_fsdp2_cp"
 RUN_DIR="${OUT_ROOT}/run_$(date +%Y%m%d_%H%M%S)_${RUN_LABEL}"
 mkdir -p "${RUN_DIR}"
 
