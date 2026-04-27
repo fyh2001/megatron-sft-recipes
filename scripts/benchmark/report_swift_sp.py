@@ -88,6 +88,7 @@ def parse_logging_jsonl(path: str):
                 "learning_rate": d.get("learning_rate"),
                 "token_acc": d.get("token_acc"),
                 "elapsed_s": _parse_elapsed(d.get("elapsed_time", "0")),
+                "elapsed_time_s": _parse_elapsed(d.get("elapsed_time", "0")),
                 "memory_gib_log": d.get("memory(GiB)"),
                 "train_speed_s_per_it": d.get("train_speed(s/it)"),
             }
@@ -179,6 +180,27 @@ def main():
         default=8.95e9,
         help="trainable params (Qwen3.5-9B with VIT frozen ≈ 8.95 B)",
     )
+    ap.add_argument(
+        "--num_active_params",
+        type=float,
+        default=None,
+        help="Active params per token (for MoE; e.g. gemma4-26B-A4B = 3.8e9). "
+             "If set, also reports MoE-correct MFU (active-params based).",
+    )
+    ap.add_argument(
+        "--dataset_size",
+        type=int,
+        default=18819,
+        help="Number of training samples in the dataset; used to estimate "
+             "full-epoch wall time. Default 18819 = sft-data/train.jsonl.",
+    )
+    ap.add_argument(
+        "--grad_accum",
+        type=int,
+        default=1,
+        help="gradient_accumulation_steps; with this we can compute per-micro-step "
+             "time and reconcile FSDP2 (typ. 1) vs DS prod (typ. 16).",
+    )
     ap.add_argument("--bench_jsonl_out", required=True)
     ap.add_argument("--report_out", required=True)
     args = ap.parse_args()
@@ -245,6 +267,35 @@ def main():
     peak_cluster_tflops = H100_PEAK_TFLOPS * args.num_gpus
     mfu = (achieved_tflops / peak_cluster_tflops * 100.0) if peak_cluster_tflops > 0 else 0.0
 
+    # MoE-correct MFU (uses active params per token, not total trainable)
+    mfu_active = None
+    achieved_tflops_active = None
+    if args.num_active_params is not None:
+        achieved_tflops_active = 6 * args.num_active_params * tokens_per_sec / 1e12
+        mfu_active = (achieved_tflops_active / peak_cluster_tflops * 100.0) if peak_cluster_tflops > 0 else 0.0
+
+    # Per micro-step (within one optimizer step)
+    micro_step_ms = mean_step_ms / max(args.grad_accum, 1)
+
+    # **REAL** total wall time (from actual run start to last step's elapsed_time)
+    # NOT an estimate — pulled directly from swift's logged elapsed_time field
+    total_wall_s_real = None
+    if records:
+        last_elapsed = None
+        for r in reversed(records):
+            v = r.get("elapsed_time_s")
+            if isinstance(v, (int, float)) and v > 0:
+                last_elapsed = float(v)
+                break
+        if last_elapsed is not None:
+            total_wall_s_real = last_elapsed
+    total_wall_min_real = (total_wall_s_real / 60.0) if total_wall_s_real else None
+    total_wall_h_real = (total_wall_s_real / 3600.0) if total_wall_s_real else None
+    actual_steps_completed = records[-1]["step"] if records else 0
+
+    # Steps_per_epoch is purely informational (how many steps a full epoch would be)
+    steps_per_epoch = max(1, math.ceil(args.dataset_size / args.gbs))
+
     peak_mem_from_log = max(
         (r.get("memory_gib_log", 0.0) or 0.0) for r in records
     ) if records else 0.0
@@ -254,23 +305,37 @@ def main():
         "backend": args.backend,
         "sequence_parallel_size": args.sp,
         "gbs": args.gbs,
+        "grad_accum": args.grad_accum,
         "max_len": args.max_len,
         "tokens_per_step": tokens_per_step,
+        "dataset_size": args.dataset_size,
         "warmup_steps": args.warmup_steps,
         "num_measured_steps": len(step_ms),
         "mean_step_time_ms": round(mean_step_ms, 2),
         "median_step_time_ms": round(median_step_ms, 2),
         "p99_step_time_ms": round(p99_step_ms, 2),
+        "micro_step_time_ms": round(micro_step_ms, 2),
+        "steps_per_epoch_for_dataset": steps_per_epoch,
+        "actual_steps_completed": actual_steps_completed,
+        "actual_total_wall_s": round(total_wall_s_real, 1) if total_wall_s_real else None,
+        "actual_total_wall_min": round(total_wall_min_real, 1) if total_wall_min_real else None,
+        "actual_total_wall_human": (
+            f"{int(total_wall_min_real // 60)}h {int(total_wall_min_real % 60)}m"
+            if total_wall_min_real else None
+        ),
         "tokens_per_sec": round(tokens_per_sec, 1),
         "tokens_per_sec_per_gpu": round(tokens_per_sec / args.num_gpus, 1),
         "achieved_tflops_per_gpu": round(achieved_tflops / args.num_gpus, 1),
         "mfu_pct": round(mfu, 2),
+        "mfu_pct_active_params": round(mfu_active, 2) if mfu_active is not None else None,
+        "achieved_tflops_per_gpu_active": round(achieved_tflops_active / args.num_gpus, 1) if achieved_tflops_active is not None else None,
         "peak_mem_gb": round(gpu_stats["peak_mem_gb"], 2),
         "peak_mem_gib_from_swift_log": round(peak_mem_from_log, 2),
         "avg_gpu_util_pct": round(gpu_stats["avg_util_pct"], 1),
         "avg_power_w": round(gpu_stats["avg_power_w"], 1),
         "peak_power_w": round(gpu_stats["peak_power_w"], 1),
         "num_params_trainable": args.num_params,
+        "num_active_params": args.num_active_params,
         "loss_first_step": post_warmup[0]["loss"] if post_warmup else None,
         "loss_last_step": post_warmup[-1]["loss"] if post_warmup else None,
         "bench_jsonl": args.bench_jsonl_out,

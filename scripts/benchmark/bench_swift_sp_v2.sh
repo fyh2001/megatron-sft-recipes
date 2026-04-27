@@ -36,6 +36,8 @@ export CUDA_DEVICE_MAX_CONNECTIONS=8
 : "${FSDP_RESHARD:=true}"            # false → reshard_after_forward=false
 : "${FSDP_WRAP_POLICY:=}"            # TRANSFORMER_BASED_WRAP | SIZE_BASED_WRAP (empty=preset default)
 : "${FSDP_MIN_NUM_PARAMS:=}"         # only used when FSDP_WRAP_POLICY=SIZE_BASED_WRAP
+: "${FSDP_TRANSFORMER_CLS_NAMES:=}"  # comma-separated, overrides default from model._no_split_modules (e.g. gemma4 needs this to skip non-existent Gemma4AudioLayer)
+: "${FSDP_CPU_RAM_EFFICIENT:=true}"  # cpu_ram_efficient_loading (rank 0 loads full weights then broadcast). Disable (false) if accelerate crashes with "Tensor has no attribute device_mesh" on mixed DTensor+Tensor root params.
 
 # --- Dataset / compute-density knobs ---
 : "${PACKING:=false}"                # true → --packing true (pack short samples into seq=MAX_LEN)
@@ -43,6 +45,13 @@ export CUDA_DEVICE_MAX_CONNECTIONS=8
 : "${DATALOADER_WORKERS:=2}"         # passed as --dataloader_num_workers
 : "${DATASET_NUM_PROC:=4}"           # passed as --dataset_num_proc
 : "${LAZY_TOKENIZE:=true}"           # false → --lazy_tokenize false (pre-tokenise whole dataset)
+: "${ATTN_IMPL:=flash_attention_2}"  # flash_attention_2 | sdpa | eager (gemma4 global layers head_dim=512 needs sdpa, flash_attn 2.x max is 256)
+: "${TRUNCATION_STRATEGY:=right}"    # right (truncate to MAX_LEN, DS prod default — matches gemma4_sft_0423.log) | delete (resample). Verified equivalent at GBS=4 native: peak mem 65.08 GiB identical, throughput ±0.3%, only ~5% dataset-size diff. Locked to 'right' from P1 onwards as project default.
+
+# --- Reporting metadata (used by report_swift_sp.py for full-epoch wall + MoE MFU) ---
+: "${NUM_PARAMS:=8.95e9}"            # trainable params (Qwen3.5-9B with VIT frozen ≈ 8.95B; gemma4-26B-A4B ≈ 25.2e9)
+: "${NUM_ACTIVE_PARAMS:=}"           # active params per token, MoE only (gemma4-26B-A4B = 3.8e9). Empty = skip MoE-MFU.
+: "${DATASET_SIZE:=18819}"           # samples in train.jsonl (sft-data/train.jsonl = 18819)
 
 : "${BENCH_DIR:=${OUTPUT_ROOT}/bench_sp_offload_v2}"
 : "${RUN_NAME:=${BACKEND}_sp${SP}_v2}"
@@ -92,26 +101,50 @@ elif [ "${BACKEND}" = "fsdp2" ]; then
     [ "${NO_AC}" = "true" ] && NEED_OVERRIDE=true
     [ "${FSDP_RESHARD}" = "false" ] && NEED_OVERRIDE=true
     [ -n "${FSDP_WRAP_POLICY}" ] && NEED_OVERRIDE=true
+    # FSDP_TRANSFORMER_CLS_NAMES: comma-separated list of transformer layer class
+    # names to wrap (overrides the default pulled from model._no_split_modules).
+    # Needed when _no_split_modules contains classes not present in the current
+    # model variant (e.g. gemma4-26B-A4B lists Gemma4AudioLayer in
+    # _no_split_modules but the model has no audio encoder, crashing
+    # accelerate/utils/dataclasses.py:2059 with "Could not find ... class").
+    [ -n "${FSDP_TRANSFORMER_CLS_NAMES:-}" ] && NEED_OVERRIDE=true
+    [ "${FSDP_CPU_RAM_EFFICIENT}" = "false" ] && NEED_OVERRIDE=true
+    # FSDP_OFFLOAD: append "offload" to fsdp string → CPUOffloadPolicy.
+    # Required when GAS>=2 (no_sync mode keeps unsharded grads between micros).
+    [ -n "${FSDP_OFFLOAD:-}" ] && NEED_OVERRIDE=true
 
     if [ "${NEED_OVERRIDE}" = "true" ]; then
         FSDP_OVERRIDE="${BENCH_OUTPUT}/fsdp_override.json"
         AC_VAL=true; [ "${NO_AC}" = "true" ] && AC_VAL=false
         RESHARD_VAL=true; [ "${FSDP_RESHARD}" = "false" ] && RESHARD_VAL=false
+        CPU_RAM_VAL=true; [ "${FSDP_CPU_RAM_EFFICIENT}" = "false" ] && CPU_RAM_VAL=false
         WRAP_VAL="${FSDP_WRAP_POLICY:-TRANSFORMER_BASED_WRAP}"
+        FSDP_STR="full_shard auto_wrap"
+        [ -n "${FSDP_OFFLOAD:-}" ] && FSDP_STR="${FSDP_STR} ${FSDP_OFFLOAD}"
         EXTRA_WRAP=""
         if [ "${WRAP_VAL}" = "SIZE_BASED_WRAP" ] && [ -n "${FSDP_MIN_NUM_PARAMS}" ]; then
             EXTRA_WRAP=", \"min_num_params\": ${FSDP_MIN_NUM_PARAMS}"
         fi
+        # Render the explicit transformer_layer_cls_to_wrap list if provided.
+        # Key name: transformers TrainingArguments uses `transformer_layer_cls_to_wrap`
+        # (accelerate internally calls it `transformer_cls_names_to_wrap` but we
+        # cross transformers.TrainingArguments → accelerate so the former wins).
+        EXTRA_CLS=""
+        if [ -n "${FSDP_TRANSFORMER_CLS_NAMES:-}" ]; then
+            _cls_json=$(echo "${FSDP_TRANSFORMER_CLS_NAMES}" | \
+                python3 -c "import sys,json;print(json.dumps([x.strip() for x in sys.stdin.read().split(',') if x.strip()]))")
+            EXTRA_CLS=", \"transformer_layer_cls_to_wrap\": ${_cls_json}"
+        fi
         cat > "${FSDP_OVERRIDE}" <<EOF
 {
-    "fsdp": "full_shard auto_wrap",
+    "fsdp": "${FSDP_STR}",
     "fsdp_config": {
         "fsdp_version": 2,
         "reshard_after_forward": ${RESHARD_VAL},
         "auto_wrap_policy": "${WRAP_VAL}",
-        "cpu_ram_efficient_loading": true,
+        "cpu_ram_efficient_loading": ${CPU_RAM_VAL},
         "state_dict_type": "SHARDED_STATE_DICT",
-        "activation_checkpointing": ${AC_VAL}${EXTRA_WRAP}
+        "activation_checkpointing": ${AC_VAL}${EXTRA_WRAP}${EXTRA_CLS}
     }
 }
 EOF
@@ -142,6 +175,13 @@ fi
 if [ "${LAZY_TOKENIZE}" = "false" ]; then
     DENSITY_FLAGS+=(--lazy_tokenize false)
 fi
+# When FSDP CPU offload is on, use device-agnostic torch AdamW (CPU math on
+# CPU-resident params).  bnb paged_adamw expects CUDA device.index which is
+# None for FSDP2 offloaded shards (TypeError 'NoneType deviceid').
+OPTIM_FLAGS=()
+if [ -n "${FSDP_OFFLOAD:-}" ]; then
+    OPTIM_FLAGS+=(--optim adamw_torch)
+fi
 
 FREEZE_FLAGS=()
 if [ "${FREEZE_VIT}" = "true" ]; then
@@ -156,9 +196,9 @@ NPROC_PER_NODE="${NPROC_PER_NODE}" swift sft \
     --dataset "${TRAIN_JSONL}" \
     --tuner_type full \
     --torch_dtype bfloat16 \
-    --attn_impl flash_attention_2 \
+    --attn_impl "${ATTN_IMPL}" \
     --max_length "${MAX_LEN}" \
-    --truncation_strategy delete \
+    --truncation_strategy "${TRUNCATION_STRATEGY}" \
     --per_device_train_batch_size "${MBS}" \
     --gradient_accumulation_steps "${GAS}" \
     --max_steps "${TOTAL_STEPS}" \
@@ -167,6 +207,7 @@ NPROC_PER_NODE="${NPROC_PER_NODE}" swift sft \
     "${GRAD_CKPT_FLAGS[@]}" \
     "${COMPILE_FLAGS[@]}" \
     "${DENSITY_FLAGS[@]}" \
+    "${OPTIM_FLAGS[@]}" \
     "${FREEZE_FLAGS[@]}" \
     "${BACKEND_FLAGS[@]}" \
     --sequence_parallel_size "${SP}" \
@@ -187,15 +228,27 @@ if [ -z "${LATEST_VDIR}" ] || [ ! -f "${LATEST_VDIR}/logging.jsonl" ]; then
     exit 0
 fi
 
+REPORT_EXTRA=()
+[ -n "${NUM_ACTIVE_PARAMS}" ] && REPORT_EXTRA+=(--num_active_params "${NUM_ACTIVE_PARAMS}")
+
 python "${SCRIPT_DIR}/report_swift_sp.py" \
     --logging_jsonl "${LATEST_VDIR}/logging.jsonl" \
     --gpu_log "${GPU_LOG}" \
     --warmup_steps "${WARMUP_BENCH}" \
     --num_gpus "${NPROC_PER_NODE}" \
     --gbs "${GBS}" \
+    --grad_accum "${GAS}" \
     --max_len "${MAX_LEN}" \
     --backend "${BACKEND}" \
     --sp "${SP}" \
+    --num_params "${NUM_PARAMS}" \
+    --dataset_size "${DATASET_SIZE}" \
+    "${REPORT_EXTRA[@]}" \
     --bench_jsonl_out "${BENCH_OUTPUT}/bench.jsonl" \
     --report_out "${BENCH_OUTPUT}/report.json"
 log "Report saved to ${BENCH_OUTPUT}/report.json"
+
+# Loss curve dump (TSV + ASCII sparkline)
+python "${SCRIPT_DIR}/extract_loss_curve.py" \
+    "${LATEST_VDIR}/logging.jsonl" "${BENCH_OUTPUT}"
+log "Loss curve saved to ${BENCH_OUTPUT}/loss_curve.{tsv,txt}"

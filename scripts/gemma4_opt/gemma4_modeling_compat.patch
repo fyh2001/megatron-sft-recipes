@@ -1,0 +1,55 @@
+21a22
+> import os
+1016a1018,1019
+>     _tp_plan = {"gate_proj": "colwise", "up_proj": "colwise", "down_proj": "rowwise"}
+> 
+1127a1131
+>     _tp_plan = {"q_proj": "colwise", "k_proj": "colwise", "v_proj": "colwise", "o_proj": "rowwise"}
+1230c1234,1238
+<             attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
+---
+>             _impl = self.config._attn_implementation
+>             # FA2/FA3 only supports head_dim <= 256; fall back to sdpa for global layers (head_dim=512)
+>             if _impl in ["flash_attention_2", "flash_attention_3"] and getattr(self, "layer_type", None) == "full_attention":
+>                 _impl = "sdpa"
+>             attention_interface = ALL_ATTENTION_FUNCTIONS[_impl]
+1410c1418,1426
+<         hidden_states *= self.layer_scalar
+---
+>         # fsdp2 compat: layer_scalar is a plain buffer that may be sharded or on meta device.
+>         # Retrieve a plain python float to avoid mixed Tensor/DTensor ops.
+>         from torch.distributed.tensor import DTensor
+>         _scalar = self.layer_scalar
+>         if isinstance(_scalar, DTensor):
+>             _scalar = float(_scalar.full_tensor().item())
+>         elif not _scalar.is_meta:
+>             _scalar = float(_scalar.item())
+>         hidden_states = hidden_states * _scalar
+1500a1517
+>     _tp_plan = {"embed_tokens": "rowwise_rep"}
+2485,2487c2502
+<             # Upcast to float if we need to compute the loss to avoid potential precision issues
+<             logits = logits.float()
+<             shift_logits = logits[..., :-1, :]
+---
+>             shift_logits = logits[..., :-1, :]  # keep bfloat16, don't upcast yet
+2499,2500d2513
+<             loss_fct = nn.CrossEntropyLoss()
+< 
+2502,2503c2515,2527
+<             flat_labels = shift_labels.view(-1).to(shift_logits.device)
+<             loss = loss_fct(flat_logits, flat_labels)
+---
+>             flat_labels = shift_labels.view(-1).to(flat_logits.device)
+>             # fsdp2 compat: chunked cross-entropy to avoid peak OOM from logits.float()
+>             # vocab_size=262144; [B*S, V] float32 = ~4GB at seq=4096 -> chunk to 1024 tokens
+>             _chunk = int(os.environ.get('GEMMA4_CE_CHUNK', '1024'))
+>             _n = flat_logits.shape[0]
+>             _total, _valid = flat_logits.new_zeros(()), 0
+>             for _s in range(0, _n, _chunk):
+>                 _e = min(_s + _chunk, _n)
+>                 _cl = flat_logits[_s:_e].float()
+>                 _ll = flat_labels[_s:_e]
+>                 _total = _total + nn.functional.cross_entropy(_cl, _ll, ignore_index=-100, reduction='sum')
+>                 _valid += (_ll != -100).sum().item()
+>             loss = _total / max(_valid, 1)
