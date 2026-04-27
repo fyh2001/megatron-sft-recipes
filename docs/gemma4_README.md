@@ -33,6 +33,11 @@
 
 读 [`gemma4_setup_from_scratch.md`](gemma4_setup_from_scratch.md) — 12 步从硬件 checklist → docker pull → 模型下载 → patch 应用 → smoke test → P5 peak 完整流程，含 5 个最容易撞到的坑 + 一键 setup 脚本。
 
+### ⚫ 我想自己踩一遍坑、自己写补丁、不要现成答案（6-10 小时）
+
+读 [`gemma4_diy_journey.md`](gemma4_diy_journey.md) — 把项目反向拆成 **10 个 puzzle quest**，每关给"启动状态 + naive 命令 + 错误现象 + 渐进式 hint"，答案折叠在 `<details>` 里。
+配套：`bash scripts/gemma4_opt/diy_reset.sh`（重置容器到"未踩坑"状态）/ `bash scripts/gemma4_opt/diy_restore.sh`（一键恢复）。
+
 ### 🟠 我要看每期具体踩过哪些坑、为什么这么定（2 小时）
 
 主线读 [`gemma4_optimization_walkthrough.md`](gemma4_optimization_walkthrough.md)（≈800 行），按 9 期顺序：
