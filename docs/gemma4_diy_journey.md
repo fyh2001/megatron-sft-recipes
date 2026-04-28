@@ -11,7 +11,8 @@
 ## 推进总览
 
 ```
-P0a  Naive FSDP2 baseline           [6 个 quest，让 baseline 跑起来]
+P0a  Naive FSDP2 baseline           [6+1 个 quest，让 baseline 跑起来]
+                                    [0a-2b 仅在 swift 是 pypi 4.1.2 时撞]
                 ↓
 P0c  DS prod baseline                [无 quest，跑 user 线上命令]
                 ↓
@@ -32,7 +33,7 @@ P5 ★ Liger                           [1 个 quest（最大头：liger gemma4 d
 
 | Phase | 想干啥 | 撞到的 quest | 改的代码文件 | 难度 |
 |---|---|---|---|---|
-| P0a | 让 FSDP2 baseline 能跑 | 0a-1 ~ 0a-6 | 配置 + modeling_gemma4 + sitecustomize 4 个 patch | ⭐⭐ x 6 |
+| P0a | 让 FSDP2 baseline 能跑 | 0a-1 ~ 0a-6（+0a-2b 条件） | 配置 + modeling_gemma4 + sitecustomize 4 个 patch（+swift_sft_patched.py wrapper，pypi swift 时启用） | ⭐⭐ x 6~7 |
 | P0c | DS prod baseline | — | — | ⭐ |
 | P0g | FSDP2 ↔ DS 对齐 | 0g-token (可选) | ms-swift fork 2 文件 | ⭐⭐⭐ |
 | P1 | GBS 扫盘 | 1-offload | sitecustomize +1 patch | ⭐⭐⭐ |
@@ -118,13 +119,71 @@ File ".../accelerate/utils/dataclasses.py", line 2059, in __post_init__
 ```bash
 docker exec fsdp_sft grep -n '_no_split_modules' /usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py
 ```
-会看到列表里硬编码了 `["Gemma4TextDecoderLayer", "Gemma4VisionEncoderLayer", "Gemma4AudioLayer"]`。但 `gemma-4-26B-A4B-i**t**` 是 text variant，**没有 audio encoder**（只有 E2B/E4B 才有）。
+会看到列表里硬编码了 `["Gemma4TextDecoderLayer", "Gemma4VisionEncoderLayer", "Gemma4AudioLayer"]`——这是 transformers 给整个 gemma4 family 用的"超集"。但 `gemma-4-26B-A4B` 实例里**没有装 audio encoder**（gemma4 family 里只有 E2B/E4B 边缘多模态版才带 audio；A4B 是 MoE text+vision 版）。
+
+怎么自己验证不是猜的——**直接看权重文件**（ground truth）：
+
+```bash
+docker exec fsdp_sft python3 -c "
+import json, glob
+idx = glob.glob('/root/.cache/modelscope/models/google/gemma-4-26B-A4B-it/*.safetensors.index.json')[0]
+keys = json.load(open(idx))['weight_map'].keys()
+print('audio  keys:', sum('audio'  in k for k in keys))
+print('vision keys:', sum('vision' in k for k in keys))
+print('text   keys:', sum('language_model' in k or 'text_model' in k for k in keys))
+"
+# 实测：audio keys: 0, vision keys: 356, text keys: 657
+```
+
+`audio keys: 0` 就坐实了——磁盘上根本没有 audio tower 的权重。`_no_split_modules` 里那个 `Gemma4AudioLayer` 名字对当前实例是"假阳性"，accelerate 拿它去 `model.modules()` 里找当然找不到。
+
+> ⚠️ **不要靠 `config.json` 有没有 `audio_config` 来判断**——A4B-it 实例里 `audio_config` 字段**是存在的**（family 模板里就带），但内容大概率是空层 / `num_hidden_layers=0`，transformers `Gemma4ForConditionalGeneration.__init__()` 看到会跳过建 `audio_tower`。所以 config 检查会假阳性。**只有 safetensors index 里的权重 key 数才是物理事实**。
+>
+> 想看 `audio_config` 到底空成啥样：
+> ```bash
+> docker exec fsdp_sft python3 -c "
+> import json
+> cfg = json.load(open('/root/.cache/modelscope/models/google/gemma-4-26B-A4B-it/config.json'))
+> print(json.dumps(cfg['audio_config'], indent=2))
+> "
+> ```
+
+> 命名约定备注：`-it` 是 instruction-tuned 后缀（vs `-pt` 预训练），跟模态没关系。**真正决定有没有 audio 的是 E（Edge：E2B/E4B 带 audio+vision）vs A（Active：A4B/A8B 只 text+vision）这个 family 字母**。
 
 </details>
 
 <details><summary>Hint 2</summary>
 
-需要在 fsdp config 里加显式列表覆盖默认。key 名是什么？
+需要在 fsdp config 里加显式列表覆盖默认。key 名怎么找？这里有个**坑**——accelerate 文档和 transformers 用的 key 名**不一样**，写错就静默失效。三条找法：
+
+**(a) 顺着 stack trace 读 accelerate 源码**——错误指 `accelerate/utils/dataclasses.py:2059`，去看那行读的是哪个 dataclass 字段：
+```bash
+docker exec fsdp_sft sed -n '2040,2075p' \
+    /usr/local/lib/python3.12/site-packages/accelerate/utils/dataclasses.py
+```
+你会看到 `FullyShardedDataParallelPlugin` 类里有字段 `transformer_cls_names_to_wrap: Optional[List[str]]`——这是 **accelerate 内部**字段名。
+
+**(b) 但你传的不是直接 accelerate**——swift sft 走的是 transformers `TrainingArguments` → 再 mapping 到 accelerate。看 transformers 接受哪个 JSON key：
+```bash
+docker exec fsdp_sft grep -n 'transformer_layer_cls_to_wrap\|transformer_cls_names_to_wrap' \
+    /usr/local/lib/python3.12/site-packages/transformers/training_args.py
+```
+会发现 transformers 在 `fsdp_config` JSON schema 里认的 key 是 **`transformer_layer_cls_to_wrap`**（注意 `layer_cls`，跟 accelerate 那个差一个词），它内部再赋给 accelerate 的 `transformer_cls_names_to_wrap`。
+
+**(c) 最快**——直接 grep `TrainingArguments` 文档字符串里 fsdp_config 支持哪些 key：
+```bash
+docker exec fsdp_sft python3 -c "
+from transformers import TrainingArguments
+import inspect
+src = inspect.getsource(TrainingArguments)
+for line in src.split('\n'):
+    if 'transformer' in line.lower() and ('cls' in line.lower() or 'wrap' in line.lower()):
+        print(line.rstrip())
+" | head -10
+```
+会直接列出合法 key 名 `transformer_layer_cls_to_wrap`。
+
+> 💡 这是 transformers ↔ accelerate 集成里很常见的"两套命名"陷阱：accelerate 文档（如 `accelerate launch --fsdp_transformer_cls_to_wrap`）和 transformers `TrainingArguments` 的 JSON 字段是不同的命名空间。**判断标准：你是怎么调它的？经过 transformers Trainer/TrainingArguments → 用 transformers 风格的 key**。
 
 </details>
 
@@ -136,6 +195,37 @@ docker exec fsdp_sft grep -n '_no_split_modules' /usr/local/lib/python3.12/site-
 ```
 
 key 名是 `transformer_layer_cls_to_wrap`（transformers TrainingArguments 接口名），不是 accelerate 文档里的 `transformer_cls_names_to_wrap`。
+
+### 实操：怎么塞进 docker exec 命令
+
+P0a 起手那条 `docker exec fsdp_sft bash -lc "..."` 命令用 `--fsdp '{...}'` 内联 JSON，所有 `"` 都要 `\"` 转义。再加一个 list 字段进去 quote 会更乱。**强烈建议改成"JSON 写文件、命令里引用路径"**：
+
+```bash
+# 1. fsdp_config 写到容器里的 /tmp 文件（外层单引号，JSON 内部不用转义）
+docker exec fsdp_sft bash -lc 'cat > /tmp/fsdp_q1.json <<EOF
+{
+    "fsdp": "full_shard auto_wrap",
+    "fsdp_config": {
+        "fsdp_version": 2,
+        "reshard_after_forward": true,
+        "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+        "transformer_layer_cls_to_wrap": ["Gemma4TextDecoderLayer", "Gemma4VisionEncoderLayer"],
+        "cpu_ram_efficient_loading": true,
+        "state_dict_type": "SHARDED_STATE_DICT",
+        "activation_checkpointing": true
+    }
+}
+EOF'
+
+# 2. 验证 JSON 语法（pipe 到 json.tool 出错即坏）
+docker exec fsdp_sft cat /tmp/fsdp_q1.json | python3 -m json.tool
+
+# 3. swift sft 命令里把 --fsdp '{...}' 换成 --fsdp /tmp/fsdp_q1.json
+```
+
+后面 0a-2 ~ P5 你只需要 `vi /tmp/fsdp_q1.json` 加/改字段（offload、关 AC、reshard=false ……），**不用再跟 bash 转义打架**。
+
+> 如果想看项目工程化的做法（env var → 自动渲染 JSON 文件），见 `scripts/benchmark/bench_swift_sp_v2.sh` 里 `FSDP_TRANSFORMER_CLS_NAMES` 那段——`scripts/gemma4_opt/p0_baseline_fsdp2.sh` 就是这么调的。DIY 阶段先用上面手写文件的方式理解机制，正式跑实验再切 bench 脚本。
 
 </details>
 
@@ -157,6 +247,35 @@ File ".../accelerate/utils/fsdp_utils.py", line 537, in <listcomp>
 
 那 accelerate 为什么以为它们是 DTensor？看 fsdp_config 里某个 bool。
 
+**怎么从症状走到那个 bool**——4 步实战路径：
+
+```bash
+# Step 1: 读 error 报的具体行号（fsdp_utils.py:537）上下文，看是什么函数在 raise
+docker exec fsdp_sft sed -n '500,570p' \
+    /usr/local/lib/python3.12/site-packages/accelerate/utils/fsdp_utils.py
+# 你会看到函数名类似 fsdp2_load_full_state_dict，循环 state_dict 把每个 v 转 DTensor。
+# 关键词：load_full_state_dict —— 这是"集中加载再广播"的特殊路径，不是默认路径。
+
+# Step 2: grep 这个函数在哪被调用，找触发开关
+docker exec fsdp_sft grep -rn 'fsdp2_load_full_state_dict' \
+    /usr/local/lib/python3.12/site-packages/accelerate/
+# caller 那行附近会有 `if self.fsdp_plugin.cpu_ram_efficient_loading:` 守着这个调用。
+
+# Step 3: 交叉验证 —— 列 FSDP plugin 所有跟 load/broadcast/cpu 相关的字段
+docker exec fsdp_sft python3 -c "
+from accelerate.utils import FullyShardedDataParallelPlugin
+import dataclasses
+for f in dataclasses.fields(FullyShardedDataParallelPlugin):
+    if any(kw in f.name.lower() for kw in ['load','broadcast','cpu','ram','sync']):
+        print(f.name, '→', (f.metadata or {}).get('help','')[:100])
+"
+# cpu_ram_efficient_loading 的 help text 大概是
+#   "only the first process loads ... others have empty weights"
+# 正好对应"rank 0 load + broadcast"这条路径。
+```
+
+> **debug 元技巧**：错误带行号 → sed 读上下文 → 看函数名拆出语义关键词 → grep 找 caller 的 if 条件 → 交叉验证 dataclass 字段 help。这套四步法对几乎所有 transformers/accelerate 报错都好使。
+
 </details>
 
 <details><summary>答案</summary>
@@ -166,6 +285,96 @@ File ".../accelerate/utils/fsdp_utils.py", line 537, in <listcomp>
 `true` 时 rank 0 在 CPU 上装满 model 然后 broadcast；root params 没被 shard 的话广播完后还是 plain Tensor → accelerate 把 root 都当 DTensor 处理就崩。
 
 代价：每 rank 自己 load 51.6 GB 模型（主机 RAM 峰值 ≈ 400 GB），加载 ~30 sec → ~90 sec。
+
+</details>
+
+---
+
+## Quest 0a-2b：swift SP 跟 transformers 5.5.x mask API mismatch ❌ ⭐⭐
+
+> 这关 reset 之后**有可能撞到、也有可能不撞**——取决于你容器里 swift 是 pypi 4.1.2 还是 fyh2001/ms-swift fork。如果是 fork（reset 默认保留），fork 已 fix SP 签名，你直接跳 0a-3。如果是 pypi 版，会撞下面这个错。
+
+forward 第 1 步建 mask 时崩：
+```
+File ".../transformers/models/gemma4/modeling_gemma4.py", line 2063, in create_causal_mask_mapping
+    "full_attention": create_causal_mask(**mask_kwargs),
+File ".../transformers/masking_utils.py", line 983, in create_causal_mask
+    causal_mask = mask_interface(...)
+TypeError: SequenceParallel._prepare_flash_attn.<locals>.flash_attention_mask()
+    missing 1 required positional argument: 'cache_position'
+```
+
+### 背景
+
+transformers 5.5 重写了 causal mask 接口：
+
+| 接口 | 老签名（≤ 5.4） | 新签名（5.5+） |
+|---|---|---|
+| `flash_attention_mask(...)` | 第 2 个位置参数是 `cache_position` | 改成 `(batch_size, q_length, kv_length, ...)` 关键字风格 |
+| `create_causal_mask(...)` | `(config, inputs_embeds, attention_mask)` | 增加 `cache_position`/`past_key_values`/`position_ids` kwargs |
+
+swift 4.1.2 的 `SequenceParallel._prepare_flash_attn` 内部 monkey-patch 了 `masking_utils.flash_attention_mask`，闭包签名是**老版**的。tf 5.5 build mask 时按**新签名**传 `cache_position` kwarg 给那个闭包 → 闭包没声明这个 arg → TypeError。
+
+### 先诊断你的 swift 是哪个版本
+
+```bash
+docker exec fsdp_sft python3 -c "
+import swift, inspect
+print('swift version :', swift.__version__)
+print('swift path    :', swift.__file__)
+from swift.sequence_parallel import ulysses as u
+src = inspect.getsource(u.SequenceParallel._prepare_flash_attn)
+print('has tf55 fix? :', '**kwargs' in src and 'q_length' in src)
+"
+```
+
+- `has tf55 fix? : True` → 是 fork 版（reset 默认保留）→ 不会撞这个错，跳过本 quest
+- `has tf55 fix? : False` → 是 pypi 4.1.2 → 继续看下面
+
+<details><summary>Hint 1</summary>
+
+最小破坏的修法：写个 wrapper，在 import swift **之前** monkey-patch `swift.sequence_parallel.ulysses.SequenceParallel._prepare_flash_attn`，把里面那个闭包改成接受 `**kwargs`，然后用 wrapper 替代 `swift sft`。
+
+为什么不直接改 swift 源码？因为 swift 装在 `/usr/local/lib/python3.12/site-packages/swift/`，pip 一更新就丢；wrapper 留在项目里更稳。
+
+</details>
+
+<details><summary>答案 — 用项目内置 wrapper</summary>
+
+项目里早写好了：`scripts/benchmark/swift_sp_patch.py`（patch 实现）+ `scripts/benchmark/swift_sft_patched.py`（drop-in CLI wrapper）。
+
+把启动命令的 `swift sft` 换成：
+
+```bash
+NPROC_PER_NODE=8 python3 scripts/benchmark/swift_sft_patched.py \
+    --model ... --template gemma4 --dataset ... \
+    --sequence_parallel_size 2 ... \
+    --fsdp /tmp/fsdp_q1.json \
+    --output_dir /tmp/q1_run
+```
+
+wrapper 启动顺序（`swift_sft_patched.py`）：
+```python
+import swift_sp_patch         # 先 apply monkey-patch
+from swift.cli.utils import try_use_single_device_mode
+from swift.pipelines import sft_main
+sft_main()
+```
+
+`swift_sp_patch.apply()` 替换 `_prepare_flash_attn`，里面的闭包签名改成 `(batch_size, q_length, kv_length, *, ..., **kwargs)`，多余的 `cache_position` 等 kwargs 直接吞掉。SP=1 退化路径仍 delegate 到 tf 5.5 原版；SP>1 路径返回简化的 `attention_mask`（flash_attn unpadded 模式只关心"每 token 是否 valid"）。
+
+打开 `SWIFT_SP_PATCH_VERBOSE=1` 能看到生效日志：
+```
+[swift_sp_patch] patched swift.sequence_parallel.ulysses._prepare_flash_attn
+                 for transformers 5.5.x
+```
+
+> **替代方案**：装 fyh2001/ms-swift fork（branch `gemma4-complete`），fork 的 `_prepare_flash_attn` 已经 carry 了同样的 fix。命令：
+> ```bash
+> docker exec fsdp_sft pip install --force-reinstall --no-deps \
+>     -e /home/ubuntu/fyh/ms-swift-fork
+> ```
+> 装了 fork 之后用原本的 `swift sft` 就行，不用换 wrapper。**P0g 的 token stats patch 也是改这个 fork**，所以正式跑实验建议装 fork；DIY 走 wrapper 更轻。
 
 </details>
 
@@ -1001,6 +1210,107 @@ bash scripts/gemma4_opt/diy_restore.sh
 不要硬扛 —— 这些 puzzle 个个都是项目里我们卡了 2-12 小时才搞定的真实坑。能在 30-60 min/quest 内消化已经很厉害了。
 
 debug 真实流程的复盘见 [`gemma4_debug_log.md`](gemma4_debug_log.md)（4 段式：现象 → 定位 → 修改 → 验证）。
+
+---
+
+# 附录 A：手写 ms-swift fork（3 个 patch）
+
+> Quest 0a-2b 提到 fork 已经 carry 了 SP 签名 fix，Quest 0g-token 提到 fork 多了 token stats 两个改动——这里把"自己从零写一份 fork"的完整流程沉淀下来。**fork = 把项目里散布的 3 个 runtime patch 持久化到 swift 源码里**。
+
+## fork 改了哪 3 个文件
+
+| # | 文件 | 干啥 | 对应的 runtime 等价物 |
+|---|---|---|---|
+| 1 | `swift/sequence_parallel/ulysses.py` | 替换 `SequenceParallel._prepare_flash_attn` → 兼容 transformers 5.5.x mask 接口 | `scripts/benchmark/swift_sp_patch.py` |
+| 2 | `swift/trainers/seq2seq_trainer.py` | `Seq2SeqTrainer.__init__` + `training_step` 加 token 累加 | （无 runtime 等价；项目自加 feature） |
+| 3 | `swift/trainers/patcher.py` | `add_train_message` 读 `state.token_stats` emit 到 logs | （同上） |
+
+**Patch 1** = bug fix（pypi swift 4.1.2 在 tf 5.5 下 SP 直接报 `TypeError`），upstream ms-swift main (>=4.2.0.dev0) 已合并 PR #9167，所以也可以跳过自己写、直接装 main。
+**Patch 2/3** = feature add（让 throughput metric 准），upstream 没有，必须自写。
+
+## Step 1: 装可编辑模式
+
+```bash
+docker exec fsdp_sft bash -lc "
+    cd /home/ubuntu/fyh && \
+    git clone --branch v4.1.2 https://github.com/modelscope/ms-swift.git ms-swift-fork && \
+    cd ms-swift-fork && \
+    git checkout -b gemma4-complete && \
+    pip install --force-reinstall --no-deps -e .
+"
+```
+
+`--no-deps` 避免被覆盖；`-e .` 让源码改动立即生效。
+
+验证装到了本地路径：
+```bash
+docker exec fsdp_sft python3 -c "import swift; print(swift.__file__)"
+# 应该是 /home/ubuntu/fyh/ms-swift-fork/swift/__init__.py
+```
+
+## Step 2: Patch 1 — SP 签名兼容
+
+打开 `swift/sequence_parallel/ulysses.py`，找 `class SequenceParallel:` 里的 `_prepare_flash_attn`。**直接拿 `scripts/benchmark/swift_sp_patch.py` 里 `_prepare_flash_attn` 函数的 body（line 43~277）整个覆盖原版**。
+
+核心改动是三个闭包的签名：
+
+| 闭包 | upstream 签名 | 新签名（fix） |
+|---|---|---|
+| `flash_attention_mask` | `(batch_size, cache_position, ...)` | `(batch_size, q_length, kv_length, ..., **kwargs)` |
+| `sdpa_mask` | `(batch_size, cache_position, ...)` | 同上 + SP>1 raise NotImplementedError |
+| `create_causal_mask` | `(config, inputs_embeds, attention_mask)` | + `cache_position`/`past_key_values`/`position_ids` kwargs |
+
+末尾的 `flash_attention_forward` wrap（DistributedAttention 那段）保留不动。
+
+## Step 3: Patch 2 — Token stats producer
+
+打开 `swift/trainers/seq2seq_trainer.py`，找 `class Seq2SeqTrainer(Trainer):`。
+
+**(a) `__init__` 末尾加 4 行 init**：
+```python
+self._step_token_count = 0
+self._last_reset_step = -1
+self._sp_size = getattr(self.template, 'sequence_parallel_size', 1)
+self._dp_size = None  # lazy init in training_step
+```
+
+**(b) 替换整个 `training_step` 方法**——见 Quest 0g-token 的"答案 — swift/trainers/seq2seq_trainer.py"段，那段就是 fork 里 Patch 2 的内容。
+
+## Step 4: Patch 3 — Token stats consumer
+
+打开 `swift/trainers/patcher.py`，找 `def add_train_message(...)`。**在 `for k, v in logs.items():` 循环之前**插一段——见 Quest 0g-token 的"答案 — swift/trainers/patcher.py"段。
+
+## Step 5: 验证 3 patch 都生效
+
+```bash
+docker exec fsdp_sft python3 -c "
+import inspect, swift
+print('swift path:', swift.__file__)
+from swift.sequence_parallel import ulysses as u
+from swift.trainers.seq2seq_trainer import Seq2SeqTrainer
+from swift.trainers import patcher
+print('Patch 1 (SP tf55 fix):', '**kwargs' in inspect.getsource(u.SequenceParallel._prepare_flash_attn) and 'q_length' in inspect.getsource(u.SequenceParallel._prepare_flash_attn))
+print('Patch 2 (token producer):', '_step_token_count' in inspect.getsource(Seq2SeqTrainer.training_step))
+print('Patch 3 (token logger):', 'tokens_per_gpu_per_sec' in inspect.getsource(patcher.add_train_message))
+"
+# 三个都应是 True
+```
+
+## Step 6: 跑通验证
+
+装好 fork 后**直接用 `swift sft`**（不再需要 `swift_sft_patched.py` wrapper）：
+1. forward 不再撞 SP TypeError（Patch 1）
+2. `logging.jsonl` 出现 `tokens_this_step` / `tokens_per_gpu_per_sec` / `tokens_global_per_sec`（Patch 2+3）
+
+## 替代起点对照
+
+| 起点 | pip 命令 | Patch 1 | Patch 2 | Patch 3 |
+|---|---|---|---|---|
+| pypi 4.1.2（推荐 DIY） | `pip install ms-swift==4.1.2` | 必须自写 | 必须自写 | 必须自写 |
+| upstream main (>=4.2.0.dev0) | `pip install git+https://github.com/modelscope/ms-swift@main` | 已包含（PR #9167） | 必须自写 | 必须自写 |
+| fyh2001/ms-swift fork | `pip install -e /home/ubuntu/fyh/ms-swift-fork` | 已包含 | 已包含 | 已包含 |
+
+DIY 阶段建议从 pypi 4.1.2 起步全部自写，理解每个 patch 为什么存在。**正式跑实验装 fyh2001 fork 即可，不用每次重复手工 patch**。
 
 ---
 
