@@ -76,24 +76,28 @@ docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/transformers
 >
 > **现状**：reset 之后什么 patch 都没有。直接跑 → 撞 6 个独立的坑（项目里 P0a 实际经历的）。
 
-> ⚠️ **能不能踩到全部 6 关，取决于 4 个前置条件**。如果不满足，你会"幸运"跳过其中几关：
+> ⚠️ **能不能踩到全部 6 关，取决于 5 个前置条件**。如果不满足，你会"幸运"跳过其中几关：
 >
 > | 前置 | 不满足的后果 |
 > |---|---|
 > | `bash diy_reset.sh` 先跑过（modeling_gemma4 是 upstream，不是 patched） | 跳过 Q0a-3（FA head_dim 错）、Q0a-6（logits OOM），因为 modeling 里两处 patch 已经把它们都解了 |
-> | 启动命令里 **不传** `PYTHONPATH=...sdp_preamble:$PYTHONPATH GEMMA4_FORCE_MEM_EFFICIENT_SDP=1` | sitecustomize 不激活 → 跳过 Q0a-5（GQA Invalid backend，因为 math backend 接 enable_gqa=True 没问题）。**但同时也丢失 mem_efficient 优化**，更容易撞 Q0a-4（math attn OOM） |
-> | `--truncation_strategy right`（不是 `delete`） | 否则 < 16k 的样本不会强制 pad/截到 16k，max per-rank seq 偏小（你的 dataset 可能 6-12k），math attn matrix 也小 → 跳过 Q0a-4 |
-> | dataset 里**有** ≥ 16k 的样本 | 否则 `right` 也撞不到上限 |
+> | 启动命令里 **不传** `PYTHONPATH=...sdp_preamble:$PYTHONPATH GEMMA4_FORCE_MEM_EFFICIENT_SDP=1` | sitecustomize 不激活 → 跳过 Q0a-5（GQA Invalid backend，因为 math backend 接 enable_gqa=True 没问题） |
+> | swift 加载链路里**没有** runtime FA fallback（如 `swift/utils/patches/gemma4_fa_patch.py`） | 否则 Q0a-3 也被这条路径解了，跟 modeling patch 二选一即可（[`fyh2001/ms-swift@b462182d`](https://github.com/fyh2001/ms-swift/commit/b462182d) 是 runtime 版本） |
+> | **dataset 里有 ≥ 16k 的样本** ⭐️ | `--truncation_strategy right` **只在 sample > 16k 时截断，不会 pad 短样本到 16k**。如果你的 dataset 最长样本只有 ~12k，per-rank seq （SP=2 切完）只有 ~6k → math attn matrix ~1 GB/层 → 跳过 Q0a-4 |
+> | `activation_checkpointing: true` | AC=on 时 backward 一次只活 1 层 attn matrix，30 层不同时存在；AC=off 才会让 30 层 attn 同时活 → Q0a-4 易触发 |
 >
-> **想真正踩到全部 6 关**，先校验：
+> **强制触发 Q0a-4 的 3 种方法**（任选一个）：
+> 1. **关 SP**：`--sequence_parallel_size 1`，per-rank seq 翻倍
+> 2. **关 AC**：fsdp config 里 `activation_checkpointing: false`
+> 3. **塞一个 ≥16k 样本**：合成数据 `python3 -c "import json; print(json.dumps({'messages': [{'role':'user','content':'你好。'*5000},{'role':'assistant','content':'收到。'}]}, ensure_ascii=False))" > /tmp/long.jsonl`
+>
+> **想真正按 doc 顺序踩全部 6 关**，先校验起点：
 > ```bash
 > bash scripts/gemma4_opt/diy_reset.sh
-> # 校验：
 > docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py
 > # 应该 NOT 是 39ebf386a992fea9eac0883f459ac658
 > ls scripts/gemma4_opt/_sdp_preamble/sitecustomize.py 2>&1   # 应该 No such file
 > ```
-> 然后命令里**用 `right`**：`--truncation_strategy right`。
 
 ## P0a 起点：第一次 naive 启动
 
@@ -120,7 +124,7 @@ NPROC_PER_NODE=8 swift sft \
 "
 ```
 
-> ✅ **`--truncation_strategy right`** 是关键 —— 它把所有样本截到 16384，每个 micro 都跑满。如果用 `delete`（短样本不变长），你的 dataset 实际 max seq 可能只有 6-12k，per-rank attn matrix 撞不到 OOM 上限，会**幸运跳过 Q0a-4**。
+> ⚠️ **`right` vs `delete` 在你的 dataset 上可能等价**：`right` 真实语义是"超过 16k 的样本从右截断"，**不是 "pad 到 16k"**。如果你的 dataset 没有 ≥16k 样本（多数 SFT 数据集如此），两种 strategy 行为完全相同，per-rank max seq 还是受 dataset 限制。要让 Q0a-4 必撞，看上面前置条件框里的 3 种"强制触发"方法。
 
 跑完会**连续撞 6 个错**（每修一个进下一个）。下面 6 关按顺序解。
 
@@ -458,7 +462,9 @@ attention_interface = ALL_ATTENTION_FUNCTIONS[_impl]
 
 ## Quest 0a-4：SDPA forward 撞 OOM `8.60 GiB` ❌ ⭐⭐ — 第一次写 sitecustomize
 
-接着撞：
+> ⚠️ **此关只在 per-rank seq 接近 16k 时必撞**。如果你的 dataset 最长样本 < 14k，加上 SP=2 + AC=on，math 后端能挤进 80 GB，**这关你跑不出 OOM 跳过即可**（peak mem 大概 73-78 GiB，擦边球）。看 P0a 入口前置条件表的 3 种"强制触发"方法。后续 P5（packing）每 micro 都跑满 16k 时，**不写本关 patch 就一定 OOM**，所以这一关本质上是预埋。
+
+接着撞（**真的撞了才看下面**）：
 ```
 torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 8.60 GiB.
 GPU 0 has a total capacity of 79.10 GiB of which 6.42 GiB is free.
@@ -470,9 +476,12 @@ PyTorch SDPA 4 个 backend：FlashAttention（head_dim ≤ 256，禁了）、**m
 
 PyTorch 对 head_dim=512 + bf16 默认选 **math**：
 ```
-seq=16384, head=16, head_dim=512, bf16
-attn matrix [16384, 16384, 16] × 2 bytes = 8.6 GiB / layer × 30 layers → OOM
+seq=16384 (满载), head=16, head_dim=512, bf16
+attn matrix [16384, 16384, 16] × 2 bytes = 8.6 GiB / layer
+AC=on 时一次活 1 层 → 8.6 GiB / step
+AC=off 时 30 层同时活 → 257 GiB → 必 OOM
 ```
+对比小 seq：seq=6000 (你这次的实际 max) → attn = 6000² × 16 × 2 = **1.15 GiB / 层**，AC=on 完全能挤进。
 
 <details><summary>Hint 1</summary>
 
