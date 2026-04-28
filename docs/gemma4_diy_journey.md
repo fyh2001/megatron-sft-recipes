@@ -76,6 +76,25 @@ docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/transformers
 >
 > **现状**：reset 之后什么 patch 都没有。直接跑 → 撞 6 个独立的坑（项目里 P0a 实际经历的）。
 
+> ⚠️ **能不能踩到全部 6 关，取决于 4 个前置条件**。如果不满足，你会"幸运"跳过其中几关：
+>
+> | 前置 | 不满足的后果 |
+> |---|---|
+> | `bash diy_reset.sh` 先跑过（modeling_gemma4 是 upstream，不是 patched） | 跳过 Q0a-3（FA head_dim 错）、Q0a-6（logits OOM），因为 modeling 里两处 patch 已经把它们都解了 |
+> | 启动命令里 **不传** `PYTHONPATH=...sdp_preamble:$PYTHONPATH GEMMA4_FORCE_MEM_EFFICIENT_SDP=1` | sitecustomize 不激活 → 跳过 Q0a-5（GQA Invalid backend，因为 math backend 接 enable_gqa=True 没问题）。**但同时也丢失 mem_efficient 优化**，更容易撞 Q0a-4（math attn OOM） |
+> | `--truncation_strategy right`（不是 `delete`） | 否则 < 16k 的样本不会强制 pad/截到 16k，max per-rank seq 偏小（你的 dataset 可能 6-12k），math attn matrix 也小 → 跳过 Q0a-4 |
+> | dataset 里**有** ≥ 16k 的样本 | 否则 `right` 也撞不到上限 |
+>
+> **想真正踩到全部 6 关**，先校验：
+> ```bash
+> bash scripts/gemma4_opt/diy_reset.sh
+> # 校验：
+> docker exec fsdp_sft md5sum /usr/local/lib/python3.12/site-packages/transformers/models/gemma4/modeling_gemma4.py
+> # 应该 NOT 是 39ebf386a992fea9eac0883f459ac658
+> ls scripts/gemma4_opt/_sdp_preamble/sitecustomize.py 2>&1   # 应该 No such file
+> ```
+> 然后命令里**用 `right`**：`--truncation_strategy right`。
+
 ## P0a 起点：第一次 naive 启动
 
 打开 [`p0_baseline_fsdp2.sh`](../scripts/gemma4_opt/p0_baseline_fsdp2.sh)（已经写好的最小命令），但**先把里面 `FSDP_TRANSFORMER_CLS_NAMES` 这一行注释掉、也不要传任何 sitecustomize 相关环境变量**。  最朴素版本就是：
@@ -87,7 +106,7 @@ NPROC_PER_NODE=8 swift sft \
     --model /home/ubuntu/.cache/modelscope/models/google/gemma-4-26B-A4B-it \
     --model_type gemma4 --template gemma4 \
     --dataset /home/ubuntu/fyh/sft-data/train.jsonl \
-    --max_length 16384 --truncation_strategy delete \
+    --max_length 16384 --truncation_strategy right \
     --per_device_train_batch_size 1 --gradient_accumulation_steps 1 \
     --max_steps 5 --logging_steps 1 --save_strategy no \
     --tuner_type full --torch_dtype bfloat16 \
@@ -100,6 +119,8 @@ NPROC_PER_NODE=8 swift sft \
     --output_dir /tmp/q1_run
 "
 ```
+
+> ✅ **`--truncation_strategy right`** 是关键 —— 它把所有样本截到 16384，每个 micro 都跑满。如果用 `delete`（短样本不变长），你的 dataset 实际 max seq 可能只有 6-12k，per-rank attn matrix 撞不到 OOM 上限，会**幸运跳过 Q0a-4**。
 
 跑完会**连续撞 6 个错**（每修一个进下一个）。下面 6 关按顺序解。
 
