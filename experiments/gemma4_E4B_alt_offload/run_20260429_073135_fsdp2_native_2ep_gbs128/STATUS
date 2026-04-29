@@ -1,0 +1,1 @@
+FAILED — exit=1 (transformers Trainer FSDP plugin SHARDED_STATE_DICT, JSON state_dict_type silently ignored)

@@ -1,0 +1,1 @@
+FAILED — OOM (cpu_ram_efficient_loading=false: each rank loads 16GB on GPU before sharding; switching to true)
