@@ -40,32 +40,99 @@ docker run --rm -it --gpus all --shm-size=16g --ipc=host \
 
 ## 2. 新机器从 0 准备
 
-如果你刚拿到一台 8x H100/A100 机器，什么都没装，跑：
+如果你刚拿到一台 8x H100/A100 机器、什么都没装，按下面 6 步来。**每一步都是独立的命令**，可以单独执行 / 跳过已完成的步骤。
+
+### 2.1 装 NVIDIA driver
 
 ```bash
-git clone <这个仓库>
-cd megatron-sft-recipes
+# 验证（已装的话跳过）
+nvidia-smi          # 应该看到 8 张 GPU
 
-# 自动检查 + 拉镜像 + 下模型（28 GB），可重复运行
-bash docker/prepare.sh
-
-# 跑 5 步 smoke test（约 5 分钟，验证 step 1 loss=2.226 跟 DS3 baseline 一致）
-DATASET_PATH=/path/to/your/sft.jsonl bash docker/prepare.sh --skip-model
+# Ubuntu 22.04 / 24.04 安装
+sudo apt update
+sudo apt install -y nvidia-driver-550-server   # 或 535-server，跟 CUDA 12.x 兼容
+sudo reboot                                    # 装完必须重启
 ```
 
-`prepare.sh` 7 步流水，每步 `[ ok ]` 或 `[FAIL]` + 给修复命令：
+### 2.2 装 Docker（≥ 20.10）
 
-```
-=== [step 1/7] Linux platform sanity ===           [ ok ]
-=== [step 2/7] NVIDIA driver ===                   [ ok ] Driver 590.44, 8x H100 80GB
-=== [step 3/7] Docker ===                          [ ok ] Docker 29.4.0
-=== [step 4/7] nvidia-container-toolkit ===        [ ok ] docker --gpus all works
-=== [step 5/7] Pull training image ===             [ ok ] (~15 GB pull)
-=== [step 6/7] Model weights ===                   [ ok ] Downloaded
-=== [step 7/7] Smoke test (5 steps, ~5 min) ===    [ ok ] step 1 loss=2.226
+```bash
+# 验证
+docker version
+
+# 一键安装 + 加权限
+curl -fsSL https://get.docker.com | sudo bash
+sudo usermod -aG docker $USER
+newgrp docker         # 或退出重登录
 ```
 
-任何一步失败，脚本不会自动 sudo，会**打印可直接复制粘贴的安装命令**让你看清楚再执行。
+### 2.3 装 `nvidia-container-toolkit`（让 Docker 看到 GPU）
+
+```bash
+# 验证（应该输出 8 行 GPU UUID）
+docker run --rm --gpus all nvidia/cuda:12.6.0-base-ubuntu22.04 nvidia-smi -L
+
+# 安装（Ubuntu）
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | \
+    sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+    sudo sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt update && sudo apt install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+### 2.4 拉训练镜像（~15 GB，~5 min）
+
+```bash
+docker pull fangyaohua/gemma4-e4b-it-sft:260505-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v1
+```
+
+### 2.5 下载模型权重到 host（28 GB，~10-30 min）
+
+直接用镜像里自带的 modelscope CLI 下载，不需要 host 装任何工具：
+
+```bash
+docker run --rm \
+  -v $HOME/.cache/modelscope:/root/.cache/modelscope \
+  fangyaohua/gemma4-e4b-it-sft:260505-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v1 \
+  modelscope download \
+    --model google/gemma-4-E4B-it \
+    --local_dir /root/.cache/modelscope/models/google/gemma-4-E4B-it
+```
+
+下载完成后模型在 host 的 `$HOME/.cache/modelscope/models/google/gemma-4-E4B-it/`。
+
+### 2.6 准备训练数据
+
+把你的 `*.jsonl`（messages 格式，一行一条）放到任意路径，记下绝对路径备用，例如 `/home/ubuntu/data/SFT.jsonl`。
+
+### 2.7（可选）跑 5 步 smoke test 验证
+
+确保整个 stack 没问题，step 1 应该输出 `loss=2.226 grad_norm=10.28`：
+
+```bash
+docker run --rm --gpus all --shm-size=16g --ipc=host \
+  -v $HOME/.cache/modelscope:/root/.cache/modelscope \
+  -v /path/to/your/sft.jsonl:/data/sft.jsonl:ro \
+  -v /tmp/smoke:/runs \
+  -e MODEL=/root/.cache/modelscope/models/google/gemma-4-E4B-it \
+  -e DATASET_PATH=/data/sft.jsonl \
+  -e OUT_ROOT=/runs/bench \
+  -e LABEL=smoke -e MAX_STEPS=5 -e FULL_SCHED_STOP=1 \
+  -e TEMPLATE=gemma4 -e TORCH_DTYPE=float32 -e WEIGHT_DECAY=0.1 \
+  -e FSDP_WRAP_EXTRA='{"activation_cpu_offload": true}' \
+  -e EXTRA_ENV='GEMMA4_FSDP_WRAP_PLE=1 GEMMA4_KV_SHARE_DETACH=1 GEMMA4_FSDP_REDUCE_FP32_NCCL=1' \
+  -e EXTRA_ARGS='--bf16 true --fp16 false --padding_free false --max_grad_norm 1.0' \
+  fangyaohua/gemma4-e4b-it-sft:260505-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v1 \
+  bash /opt/megatron-sft-recipes/scripts/gemma4_E4B_opt/bench_variant.sh
+```
+
+跑完看 `/tmp/smoke/bench/run_*_smoke/v0-*/logging.jsonl`，step 1 应该是 `loss=2.226 / grad_norm=10.28`。
+
+完成 2.1-2.7 后机器就 ready 了，回到 [§1 一句话启动训练](#1-一句话启动训练) 开训。
 
 ---
 
