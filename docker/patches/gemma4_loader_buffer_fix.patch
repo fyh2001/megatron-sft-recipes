@@ -1,0 +1,68 @@
+diff --git a/swift/model/models/gemma.py b/swift/model/models/gemma.py
+index 438b637e..e50587fb 100644
+--- a/swift/model/models/gemma.py
++++ b/swift/model/models/gemma.py
+@@ -207,7 +207,62 @@ class Gemma4Loader(ModelLoader):
+         from swift.utils.patches.gemma4_fa_patch import apply as _patch_gemma4_attention
+         _patch_gemma4_attention()
+         self.auto_model_cls = self.auto_model_cls or Gemma4ForConditionalGeneration
+-        return super().get_model(model_dir, *args, **kwargs)
++        model = super().get_model(model_dir, *args, **kwargs)
++
++        # transformers 5.x's checkpoint loader treats the per-layer
++        # `layer_scalar` buffers and the vision_tower `std_scale`/`std_bias`
++        # as MISSING in the LOAD REPORT, re-initializing them to torch.ones(1).
++        # Real trained values are ~0.07-0.65, so leaving them at 1.0 makes
++        # every decoder layer's output ~14x too large and loss explodes
++        # to ~27-38.  This is invisible on FSDP2 paths that go through
++        # accelerate's load_full_state_dict (they pull buffers via shard
++        # state-dicts), but breaks DS3 stage 3 / standard transformers
++        # init.  Fix: after from_pretrained returns, re-read these
++        # specific tensors from the safetensors shards and copy them
++        # into the live buffers.  Cherry-picked from
++        # https://github.com/zyfncg/ms-swift commit a1058d66.
++        try:
++            import glob as _glob
++            import os as _os
++            from safetensors import safe_open
++
++            targets = ('layer_scalar', 'std_scale', 'std_bias')
++            sft_files = sorted(_glob.glob(_os.path.join(model_dir, 'model-*-of-*.safetensors')))
++            if not sft_files:
++                sft_files = sorted(_glob.glob(_os.path.join(model_dir, '*.safetensors')))
++
++            loaded = 0
++            model_sd = model.state_dict()
++            for sft_file in sft_files:
++                with safe_open(sft_file, framework='pt') as f:
++                    for k in f.keys():
++                        if not any(sub in k for sub in targets):
++                            continue
++                        if k not in model_sd:
++                            continue
++                        tensor = f.get_tensor(k)
++                        module_path, _, param_name = k.rpartition('.')
++                        try:
++                            module_obj = model.get_submodule(module_path)
++                        except AttributeError:
++                            continue
++                        existing = getattr(module_obj, param_name, None)
++                        if existing is None or not hasattr(existing, 'data'):
++                            continue
++                        existing.data = tensor.to(existing.dtype).to(existing.device)
++                        loaded += 1
++
++            if int(_os.environ.get('RANK', '0')) == 0:
++                from swift.utils import get_logger
++                get_logger().info(
++                    f'[Gemma4Loader] manually loaded {loaded} buffer(s) '
++                    '(layer_scalar / std_scale / std_bias) from checkpoint; '
++                    f'scanned {len(sft_files)} safetensors shard(s)')
++        except Exception as _e:
++            from swift.utils import get_logger
++            get_logger().warning(f'[Gemma4Loader] buffer fix-up skipped: {_e}')
++
++        return model
+ 
+ 
+ register_model(

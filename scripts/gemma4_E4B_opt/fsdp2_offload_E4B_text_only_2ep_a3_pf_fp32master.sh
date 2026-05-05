@@ -26,8 +26,10 @@
 
 set -euo pipefail
 
-REPO=/home/ubuntu/fyh/megatron-sft-recipes
-OUT_ROOT=${REPO}/experiments/gemma4_E4B_alt_offload
+# Runtime paths — overridable via env vars so the same script works
+# both on the host (default) and inside the docker image (override).
+REPO="${REPO:-/home/ubuntu/fyh/megatron-sft-recipes}"
+OUT_ROOT="${OUT_ROOT:-${REPO}/experiments/gemma4_E4B_alt_offload}"
 mkdir -p "${OUT_ROOT}"
 
 LABEL="${LABEL:-fsdp2_offload_a3_pf_2ep_fp32master}"
@@ -36,9 +38,10 @@ RUN_DIR="${OUT_ROOT}/run_${TS}_${LABEL}"
 mkdir -p "${RUN_DIR}"
 cp "$0" "${RUN_DIR}/cmd.sh"
 
-MODEL=/home/ubuntu/.cache/modelscope/models/google/gemma-4-E4B-it
-DATASET_PATH=/home/ubuntu/fyh/megatron-sft-recipes/sft-data/SFT_0424_2.jsonl
-DATASET_SIZE=51557
+MODEL="${MODEL:-/home/ubuntu/.cache/modelscope/models/google/gemma-4-E4B-it}"
+DATASET_PATH="${DATASET_PATH:-/home/ubuntu/fyh/megatron-sft-recipes/sft-data/SFT_0424_2.jsonl}"
+# Used only for steps_per_epoch echo / report metadata; safe default if unknown.
+DATASET_SIZE="${DATASET_SIZE:-51557}"
 
 NPROC="${NPROC:-8}"
 SP="${SP:-1}"
@@ -98,16 +101,28 @@ DCGM_LOG="${RUN_DIR}/dcgm_tc.tsv"
 TRAIN_LOG="${RUN_DIR}/train.log"
 STATUS_FILE="${RUN_DIR}/STATUS"
 
-python3 "${REPO}/scripts/benchmark/gpu_monitor.py" --output "${GPU_LOG}" &
-GPU_MON_PID=$!
-python3 "${REPO}/scripts/benchmark/dcgm_scrape.py" "${DCGM_LOG}" "http://localhost:9500/metrics" &
-DCGM_PID=$!
+# GPU monitors — optional. Disable by setting GPU_MONITOR=0 / DCGM_SCRAPE=0
+# (e.g. inside docker image where dcgm-exporter is not reachable).
+GPU_MON_PID=
+DCGM_PID=
+if [ "${GPU_MONITOR:-1}" = "1" ]; then
+    python3 "${REPO}/scripts/benchmark/gpu_monitor.py" --output "${GPU_LOG}" &
+    GPU_MON_PID=$!
+fi
+if [ "${DCGM_SCRAPE:-1}" = "1" ]; then
+    python3 "${REPO}/scripts/benchmark/dcgm_scrape.py" "${DCGM_LOG}" "${DCGM_URL:-http://localhost:9500/metrics}" &
+    DCGM_PID=$!
+fi
 trap 'kill ${GPU_MON_PID} ${DCGM_PID} 2>/dev/null || true' EXIT
 
 set +e
-docker exec fsdp_sft bash -lc "
-cd /home/ubuntu/fyh/megatron-sft-recipes && \
-PYTHONPATH=/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/_sdp_preamble:\${PYTHONPATH:-} \
+# Default behaviour on the host: re-enter the swift docker container.
+# Inside the docker image (where the script is already running with the
+# right env), set DOCKER_EXEC_WRAP="bash -lc" to skip the docker-exec layer.
+DOCKER_EXEC_WRAP="${DOCKER_EXEC_WRAP:-docker exec fsdp_sft bash -lc}"
+${DOCKER_EXEC_WRAP} "
+cd ${REPO} && \
+PYTHONPATH=${REPO}/scripts/gemma4_opt/_sdp_preamble:\${PYTHONPATH:-} \
 GEMMA4_FORCE_MEM_EFFICIENT_SDP=1 \
 GEMMA4_FSDP_WRAP_PLE=1 \
 GEMMA4_KV_SHARE_DETACH=${GEMMA4_KV_SHARE_DETACH:-1} \
@@ -221,6 +236,11 @@ for k in keys:
 "
 fi
 
-docker exec fsdp_sft pkill -9 python 2>/dev/null || true
+# Best-effort cleanup of stray python workers (host: via docker exec; inside image: direct pkill)
+if [ -z "${DOCKER_EXEC_WRAP+x}" ] || [ "${DOCKER_EXEC_WRAP}" = "docker exec fsdp_sft bash -lc" ]; then
+    docker exec fsdp_sft pkill -9 python 2>/dev/null || true
+else
+    pkill -9 python 2>/dev/null || true
+fi
 
 exit ${EXIT}

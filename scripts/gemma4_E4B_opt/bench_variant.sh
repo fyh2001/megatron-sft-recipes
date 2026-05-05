@@ -31,8 +31,10 @@ set -euo pipefail
 
 LABEL="${LABEL:?LABEL is required (e.g. LABEL=A1_padding_free)}"
 
-REPO=/home/ubuntu/fyh/megatron-sft-recipes
-OUT_ROOT=${REPO}/experiments/gemma4_E4B_alt_offload/bench
+# Runtime paths — overridable via env vars so the same script works
+# both on the host (default) and inside the docker image (override).
+REPO="${REPO:-/home/ubuntu/fyh/megatron-sft-recipes}"
+OUT_ROOT="${OUT_ROOT:-${REPO}/experiments/gemma4_E4B_alt_offload/bench}"
 mkdir -p "${OUT_ROOT}"
 
 TS=$(date +%Y%m%d_%H%M%S)
@@ -40,9 +42,9 @@ RUN_DIR="${OUT_ROOT}/run_${TS}_${LABEL}"
 mkdir -p "${RUN_DIR}"
 cp "$0" "${RUN_DIR}/cmd.sh"
 
-MODEL=/home/ubuntu/.cache/modelscope/models/google/gemma-4-E4B-it
-DATASET_PATH=/home/ubuntu/fyh/megatron-sft-recipes/sft-data/SFT_0424_2.jsonl
-DATASET_SIZE=51557
+MODEL="${MODEL:-/home/ubuntu/.cache/modelscope/models/google/gemma-4-E4B-it}"
+DATASET_PATH="${DATASET_PATH:-/home/ubuntu/fyh/megatron-sft-recipes/sft-data/SFT_0424_2.jsonl}"
+DATASET_SIZE="${DATASET_SIZE:-51557}"
 
 NPROC=${NPROC:-8}
 SP=${SP:-1}
@@ -141,16 +143,23 @@ DCGM_LOG="${RUN_DIR}/dcgm_tc.tsv"
 TRAIN_LOG="${RUN_DIR}/train.log"
 STATUS_FILE="${RUN_DIR}/STATUS"
 
-python3 "${REPO}/scripts/benchmark/gpu_monitor.py" --output "${GPU_LOG}" &
-GPU_MON_PID=$!
-python3 "${REPO}/scripts/benchmark/dcgm_scrape.py" "${DCGM_LOG}" "http://localhost:9500/metrics" &
-DCGM_PID=$!
+GPU_MON_PID=
+DCGM_PID=
+if [ "${GPU_MONITOR:-1}" = "1" ]; then
+    python3 "${REPO}/scripts/benchmark/gpu_monitor.py" --output "${GPU_LOG}" &
+    GPU_MON_PID=$!
+fi
+if [ "${DCGM_SCRAPE:-1}" = "1" ]; then
+    python3 "${REPO}/scripts/benchmark/dcgm_scrape.py" "${DCGM_LOG}" "${DCGM_URL:-http://localhost:9500/metrics}" &
+    DCGM_PID=$!
+fi
 trap 'kill ${GPU_MON_PID} ${DCGM_PID} 2>/dev/null || true' EXIT
 
 set +e
-docker exec fsdp_sft bash -lc "
-cd /home/ubuntu/fyh/megatron-sft-recipes && \
-PYTHONPATH=/home/ubuntu/fyh/megatron-sft-recipes/scripts/gemma4_opt/_sdp_preamble:\${PYTHONPATH:-} \
+DOCKER_EXEC_WRAP="${DOCKER_EXEC_WRAP:-docker exec fsdp_sft bash -lc}"
+${DOCKER_EXEC_WRAP} "
+cd ${REPO} && \
+PYTHONPATH=${REPO}/scripts/gemma4_opt/_sdp_preamble:\${PYTHONPATH:-} \
 GEMMA4_FORCE_MEM_EFFICIENT_SDP=1 \
 PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True' \
 CUDA_DEVICE_MAX_CONNECTIONS=8 \
@@ -252,6 +261,10 @@ PYEOF
 fi
 
 # Cleanup any straggler workers
-docker exec fsdp_sft pkill -9 python 2>/dev/null || true
+if [ -z "${DOCKER_EXEC_WRAP+x}" ] || [ "${DOCKER_EXEC_WRAP}" = "docker exec fsdp_sft bash -lc" ]; then
+    docker exec fsdp_sft pkill -9 python 2>/dev/null || true
+else
+    pkill -9 python 2>/dev/null || true
+fi
 
 exit ${EXIT}
