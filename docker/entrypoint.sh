@@ -12,7 +12,7 @@
 #   4) 设置 PYTHONPATH 指向 sitecustomize 目录
 #   5) exec 用户命令
 #
-# 用户传给 docker run 的最后一个 arg = 训练命令（通常是 sft_v5.sh）
+# 用户传给 docker run 的最后一个 arg = 训练命令（通常是 sft_fsdp.sh）
 
 set -euo pipefail
 

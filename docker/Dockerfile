@@ -5,7 +5,7 @@
 #   依赖（在镜像里）:                  业务代码（容器启动时 git clone）:
 #     PyTorch 2.10                      sitecustomize.py (运行时 monkey-patches)
 #     CUDA 12.9                         swift gemma.py buffer-fix patch
-#     ms-swift 4.2.0.dev0 (editable)    sft_v5.sh / bench_variant.sh 等启动脚本
+#     ms-swift 4.2.0.dev0 (editable)    sft_fsdp.sh / bench_variant.sh 等启动脚本
 #     transformers / accelerate         docs/
 #     modelscope CLI                    plot_compare_*.py 等分析工具
 #     git, patch (拉代码工具)

@@ -13,28 +13,16 @@ swift gemma.py patch、启动脚本）由 `entrypoint.sh` 在容器启动时按 
 docker pull fangyaohua/gemma4-e4b-it-sft:runtime-260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-r1
 
 # 2. 下载 launcher 脚本
-wget https://raw.githubusercontent.com/fyh2001/megatron-sft-recipes/v1.0/scripts/gemma4_E4B_opt/sft_v5.sh
-chmod +x sft_v5.sh
+wget https://raw.githubusercontent.com/fyh2001/megatron-sft-recipes/v1.0/scripts/gemma4_E4B_opt/sft_fsdp.sh
+chmod +x sft_fsdp.sh
 
-# 3. 编辑 sft_v5.sh 顶部 [USER CONFIG]，填三项：
+# 3. 编辑 sft_fsdp.sh 顶部 [USER CONFIG]，填三项：
 #    MODEL_HOST_DIR / DATA_HOST_PATH / OUTPUT_HOST_DIR
 
 # 4. 启动
-bash sft_v5.sh                  # 默认 train，2 epoch ~9h on 8x H100
-bash sft_v5.sh smoke            # 或 5 步 smoke test 验证
+bash sft_fsdp.sh                  # 后台启动训练，2 epoch ~9h on 8x H100
+                                # 想前台跑就把 RUN_IN_BACKGROUND=false
 ```
-
-## sft_v5.sh subcommand 速查
-
-| 命令 | 作用 |
-|---|---|
-| `bash sft_v5.sh` | 默认 train（full epoch）|
-| `bash sft_v5.sh smoke` | 5 步快速验证 |
-| `bash sft_v5.sh status` | 查看最近一次 run 的容器状态 + 最新 step |
-| `bash sft_v5.sh logs` | docker logs -f 跟随 |
-| `bash sft_v5.sh stop` | 停掉最近一次 run |
-| `bash sft_v5.sh --dry-run` | 仅打印 docker 命令，调试用 |
-| `bash sft_v5.sh --help` | 详细帮助 |
 
 ## 镜像设计
 
@@ -65,7 +53,7 @@ entrypoint.sh
 
 ## 完整使用文档
 
-详见仓库 [`docs/v5_user_guide.md`](https://github.com/fyh2001/megatron-sft-recipes/blob/v1.0/docs/v5_user_guide.md)，包含：
+详见仓库 [`docs/fsdp_user_guide.md`](https://github.com/fyh2001/megatron-sft-recipes/blob/v1.0/docs/fsdp_user_guide.md)，包含：
 - 全新机器从 0 准备（7 步独立命令）
 - v5 vs DS3 baseline 完整性能对比（loss / grad_norm percentile + 实测图）
 - 故障排查

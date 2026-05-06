@@ -59,8 +59,8 @@ echo "Local size:"
 docker images --format '  {{.Repository}}:{{.Tag}}  {{.Size}}' "${ACCOUNT}/${NAME}" | head -3
 echo
 echo "Next steps:"
-echo "  1) Smoke test using sft_v5.sh:"
-echo "     IMAGE=${TAG} bash scripts/gemma4_E4B_opt/sft_v5.sh smoke"
+echo "  1) Smoke test using sft_fsdp.sh:"
+echo "     IMAGE=${TAG} bash scripts/gemma4_E4B_opt/sft_fsdp.sh smoke"
 echo
 echo "  2) Push to Docker Hub (requires 'docker login' as ${ACCOUNT}):"
 echo "     docker push ${TAG}"

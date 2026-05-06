@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
-# Gemma-4-E4B-it text-only SFT — v5 launcher（FSDP2 + DS3-equivalent）
+# Gemma-4-E4B-it text-only SFT — fsdp launcher（FSDP2 + DS3-equivalent）
 #
-# 单文件 launcher，host / container 双模式 + 6 个 subcommand：
+# 用法:
+#   编辑下面 [USER CONFIG] 段（必填 4 项：IMAGE / MODEL / DATA / OUTPUT），
+#   然后直接：
+#       bash sft_fsdp.sh
 #
-#   bash sft_v5.sh                # 默认：full 2-epoch 训练
-#   bash sft_v5.sh train          # 同上
-#   bash sft_v5.sh smoke          # 跑 5 步快速验证（~5 分钟）
-#   bash sft_v5.sh status         # 查看最近一次 run 的容器状态
-#   bash sft_v5.sh logs           # 实时跟随最近一次 run 的日志
-#   bash sft_v5.sh stop           # 停掉最近一次启动的容器
-#   bash sft_v5.sh --dry-run      # 打印 docker run 命令但不执行
-#   bash sft_v5.sh --help         # 详细帮助
-#
-# 编辑下面 [USER CONFIG] 段然后直接跑。镜像里 entrypoint 自动拉业务代码，
-# host 上除 docker 外没有任何依赖。
+# host 上除 docker 外没有任何依赖；镜像里 entrypoint 会自动按 CODE_REPO /
+# CODE_REF 从 git 拉业务代码（sitecustomize.py、swift gemma.py patch、
+# 训练脚本），apply patch 后 exec swift sft。
 
 set -euo pipefail
 
@@ -48,14 +43,14 @@ DATA_SEED=42
 
 SHM_SIZE=16g
 IPC_MODE=host
-RUN_IN_BACKGROUND=true
+RUN_IN_BACKGROUND=true               # true=后台启动，docker logs 看进度；false=前台
 
-# ---------- 业务代码版本（默认拉 v1.0 tag）----------
+# ---------- 业务代码版本 ----------
 
 CODE_REPO="https://github.com/fyh2001/megatron-sft-recipes.git"
-CODE_REF=v1.0
+CODE_REF=v1.0                        # tag / branch / commit hash
 
-# ---------- v5 内部（强烈不建议改）----------
+# ---------- 内部（强烈不建议改）----------
 
 TORCH_DTYPE=float32                  # fp32 master
 USE_BF16_MP=true                     # bf16 mixed precision compute
@@ -68,117 +63,19 @@ GEMMA4_KV_SHARE_DETACH=1
 GEMMA4_FSDP_REDUCE_FP32_NCCL=1
 
 # ============================================================
-# [INTERNAL] —— 下面是逻辑，一般不用改
+# [INTERNAL] —— 下面是逻辑，一般不用看
 # ============================================================
 
-DOCKER_BIN="${DOCKER_BIN:-docker}"
+DOCKER_BIN=docker
 RUN_TS="${RUN_TS:-$(date +%Y%m%d_%H%M%S)}"
 THIS_SCRIPT="$(realpath "${BASH_SOURCE[0]}")"
 HOST_SCRIPT_DIR="$(dirname "${THIS_SCRIPT}")"
-META_DIR="${OUTPUT_HOST_DIR}/.meta"
-META_FILE="${META_DIR}/latest_run.txt"
 
 log()   { echo "[$1] ${@:2}"; }
 info()  { log info "$@"; }
 warn()  { log warn "$@" >&2; }
 err()   { log error "$@" >&2; }
 die()   { err "$@"; exit 1; }
-
-usage() {
-    cat <<'EOF'
-Gemma-4-E4B-it SFT v5 launcher
-
-用法:
-  bash sft_v5.sh [SUBCOMMAND] [FLAGS]
-
-Subcommand:
-  train         (默认) full 训练（按 NUM_EPOCHS 配置，~9h on 8x H100）
-  smoke         5-step smoke test（~5 min），验证 step 1 loss=2.226 / gn=10.28
-  status        显示最近一次 run 的容器状态 + 输出目录
-  logs          docker logs -f 跟随最近一次 run
-  stop          docker stop 最近一次 run
-  --dry-run     仅打印 docker run 命令，不执行
-  --help, -h    本帮助
-
-配置:
-  直接编辑脚本顶部的 [USER CONFIG] 段（CONFIG 都是字面赋值，
-  非 env override 风格，编辑更直观）。
-
-  常见改动:
-    MODEL_HOST_DIR="..."      模型权重 host 路径
-    DATA_HOST_PATH="..."      训练数据 jsonl host 路径
-    OUTPUT_HOST_DIR="..."     输出根目录
-    NUM_EPOCHS=2              epoch 数
-    LR=2e-5                   学习率
-    CODE_REF=v1.0             业务代码版本（可改成 main / commit hash）
-EOF
-}
-
-read_meta() {
-    [ -f "${META_FILE}" ] || return 1
-    # shellcheck disable=SC1090
-    source "${META_FILE}"
-}
-
-# ============================================================
-# Subcommand dispatch
-# ============================================================
-
-SUBCMD="${1:-train}"
-DRY_RUN=0
-
-case "${SUBCMD}" in
-    -h|--help|help) usage; exit 0 ;;
-    --dry-run)  DRY_RUN=1; SUBCMD="train"; shift || true ;;
-    train|smoke) shift || true ;;
-    status)
-        read_meta || die "no previous run found (META_FILE=${META_FILE})"
-        echo "container_name : ${CONTAINER_NAME:-?}"
-        echo "container_id   : ${CONTAINER_ID:-?}"
-        STATUS=$("${DOCKER_BIN}" inspect --format '{{.State.Status}}' "${CONTAINER_NAME}" 2>/dev/null || echo "missing/removed")
-        echo "current status : ${STATUS}"
-        echo "output_dir     : ${OUTPUT_DIR:-?}"
-        echo "log_file       : ${LOG_FILE:-?}"
-        echo "view logs      : docker logs -f ${CONTAINER_NAME}"
-        echo "stop           : bash $0 stop"
-        if [ -f "${OUTPUT_DIR:-/dev/null}" ] || [ -d "${OUTPUT_DIR:-/dev/null}" ]; then
-            recent=$(ls -dt "${OUTPUT_DIR}"/v0-* 2>/dev/null | head -1 || true)
-            if [ -n "${recent}" ] && [ -f "${recent}/logging.jsonl" ]; then
-                last_step=$(grep -oE '"global_step/max_steps": "[0-9]+/[0-9]+"' "${recent}/logging.jsonl" | tail -1 || true)
-                echo "last step      : ${last_step}"
-            fi
-        fi
-        exit 0
-        ;;
-    logs)
-        read_meta || die "no previous run found"
-        exec "${DOCKER_BIN}" logs -f "${CONTAINER_NAME}"
-        ;;
-    stop)
-        read_meta || die "no previous run found"
-        info "stopping ${CONTAINER_NAME}"
-        "${DOCKER_BIN}" stop "${CONTAINER_NAME}"
-        exit $?
-        ;;
-    *)
-        if [ "${SUBCMD}" = "${1:-}" ]; then
-            err "unknown subcommand: ${SUBCMD}"
-            echo
-            usage
-            exit 2
-        fi
-        ;;
-esac
-
-# ============================================================
-# Smoke test config override
-# ============================================================
-if [ "${SUBCMD}" = "smoke" ]; then
-    info "smoke test mode: MAX_STEPS=5, FULL_SCHED_STOP=1, RUN_IN_BACKGROUND=false"
-    SMOKE_MAX_STEPS=5
-    SMOKE_FULL_SCHED_STOP=1
-    RUN_IN_BACKGROUND=false        # smoke 都是前台跑，方便看输出
-fi
 
 # ============================================================
 # Branch on RUN_CONTEXT: host-side launches docker, container-side runs swift
@@ -190,23 +87,18 @@ if [ "${RUN_CONTEXT:-host}" != "container" ]; then
     info "code repo   : ${CODE_REPO} @ ${CODE_REF}"
     info "model       : ${MODEL_HOST_DIR}"
     info "dataset     : ${DATA_HOST_PATH}"
-    info "output_dir  : ${OUTPUT_HOST_DIR}/sft_v5_${RUN_TS}"
+    info "output_dir  : ${OUTPUT_HOST_DIR}/sft_fsdp_${RUN_TS}"
     info "GPUs        : ${NPROC_PER_NODE} (CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES_VAL})"
-    info "subcommand  : ${SUBCMD}"
 
-    # ── Sanity checks ──
-    if ! command -v "${DOCKER_BIN}" >/dev/null 2>&1; then
-        die "docker not found; install from https://get.docker.com"
-    fi
-    if ! "${DOCKER_BIN}" info >/dev/null 2>&1; then
-        die "docker daemon not reachable; sudo systemctl start docker"
-    fi
-    if [ ! -d "${MODEL_HOST_DIR}" ]; then
-        die "model dir not found: ${MODEL_HOST_DIR}"
-    fi
-    if [ ! -f "${DATA_HOST_PATH}" ]; then
-        die "dataset file not found: ${DATA_HOST_PATH}"
-    fi
+    # Sanity checks
+    command -v "${DOCKER_BIN}" >/dev/null 2>&1 \
+        || die "docker not found; install from https://get.docker.com"
+    "${DOCKER_BIN}" info >/dev/null 2>&1 \
+        || die "docker daemon not reachable; sudo systemctl start docker"
+    [ -d "${MODEL_HOST_DIR}" ] \
+        || die "model dir not found: ${MODEL_HOST_DIR}"
+    [ -f "${DATA_HOST_PATH}" ] \
+        || die "dataset file not found: ${DATA_HOST_PATH}"
     if command -v nvidia-smi >/dev/null 2>&1; then
         gpu_count=$(nvidia-smi -L 2>/dev/null | wc -l)
         if [ "${gpu_count}" -lt "${NPROC_PER_NODE}" ]; then
@@ -214,17 +106,15 @@ if [ "${RUN_CONTEXT:-host}" != "container" ]; then
         fi
     fi
 
-    mkdir -p "${OUTPUT_HOST_DIR}" "${META_DIR}"
+    mkdir -p "${OUTPUT_HOST_DIR}"
 
-    RUN_OUTPUT_DIR_HOST="${OUTPUT_HOST_DIR}/sft_v5_${RUN_TS}"
-    LOG_FILE_HOST="${RUN_OUTPUT_DIR_HOST}/host.log"
-    CONTAINER_NAME="gemma4-e4b-sft-v5-${SUBCMD}-${RUN_TS}"
+    RUN_OUTPUT_DIR_HOST="${OUTPUT_HOST_DIR}/sft_fsdp_${RUN_TS}"
+    CONTAINER_NAME="gemma4-e4b-sft-fsdp-${RUN_TS}"
 
     # Forward all relevant config to container via -e
     env_args=(
         -e RUN_CONTEXT=container
         -e RUN_TS="${RUN_TS}"
-        -e SUBCMD="${SUBCMD}"
         -e CODE_REPO="${CODE_REPO}"
         -e CODE_REF="${CODE_REF}"
         -e NPROC_PER_NODE="${NPROC_PER_NODE}"
@@ -251,10 +141,6 @@ if [ "${RUN_CONTEXT:-host}" != "container" ]; then
         -e GEMMA4_KV_SHARE_DETACH="${GEMMA4_KV_SHARE_DETACH}"
         -e GEMMA4_FSDP_REDUCE_FP32_NCCL="${GEMMA4_FSDP_REDUCE_FP32_NCCL}"
     )
-    if [ "${SUBCMD}" = "smoke" ]; then
-        env_args+=(-e SMOKE_MAX_STEPS="${SMOKE_MAX_STEPS}"
-                   -e SMOKE_FULL_SCHED_STOP="${SMOKE_FULL_SCHED_STOP}")
-    fi
 
     docker_args=(
         run --rm --init
@@ -267,8 +153,9 @@ if [ "${RUN_CONTEXT:-host}" != "container" ]; then
         -v "${OUTPUT_HOST_DIR}:/workspace/output"
     )
 
-    # Open up: if user is in a git checkout of the repo, mount it so iteration
-    # is faster (entrypoint detects mounted code and skips git clone).
+    # Developer mode: if user runs the script from inside a git checkout of
+    # this repo, mount the local repo into /workspace/code so edits to
+    # sitecustomize.py / patches take effect immediately without git push.
     if [ -d "${HOST_SCRIPT_DIR}/../.." ] \
        && [ -f "${HOST_SCRIPT_DIR}/../../scripts/gemma4_opt/_sdp_preamble/sitecustomize.py" ]; then
         REPO_ROOT="$(cd "${HOST_SCRIPT_DIR}/../.." && pwd)"
@@ -289,34 +176,18 @@ if [ "${RUN_CONTEXT:-host}" != "container" ]; then
     docker_args+=(
         "${IMAGE}"
         bash -c "
-            mkdir -p /workspace/output/sft_v5_${RUN_TS}
-            exec bash /workspace/code/scripts/gemma4_E4B_opt/sft_v5.sh ${SUBCMD} \\
-                2>&1 | tee /workspace/output/sft_v5_${RUN_TS}/train.log
+            mkdir -p /workspace/output/sft_fsdp_${RUN_TS}
+            exec bash /workspace/code/scripts/gemma4_E4B_opt/sft_fsdp.sh \\
+                2>&1 | tee /workspace/output/sft_fsdp_${RUN_TS}/train.log
         "
     )
 
-    if [ "${DRY_RUN}" = "1" ]; then
-        echo
-        echo "== docker command (dry run) =="
-        printf '%q ' "${DOCKER_BIN}" "${docker_args[@]}"
-        echo
-        exit 0
-    fi
-
     if [ "${RUN_IN_BACKGROUND}" = true ]; then
         CONTAINER_ID=$("${DOCKER_BIN}" "${docker_args[@]}")
-        cat > "${META_FILE}" <<EOF
-RUN_TS="${RUN_TS}"
-SUBCMD="${SUBCMD}"
-CONTAINER_ID="${CONTAINER_ID}"
-CONTAINER_NAME="${CONTAINER_NAME}"
-OUTPUT_DIR="${RUN_OUTPUT_DIR_HOST}"
-LOG_FILE="${LOG_FILE_HOST}"
-EOF
-        info "started in background: ${CONTAINER_NAME}"
-        info "view logs: bash $0 logs    (or: docker logs -f ${CONTAINER_NAME})"
-        info "status   : bash $0 status"
-        info "stop     : bash $0 stop"
+        info "started in background: ${CONTAINER_NAME} (${CONTAINER_ID:0:12})"
+        info "view logs : docker logs -f ${CONTAINER_NAME}"
+        info "stop      : docker stop ${CONTAINER_NAME}"
+        info "output    : ${RUN_OUTPUT_DIR_HOST}"
         exit 0
     fi
 
@@ -327,9 +198,9 @@ fi
 # CONTAINER MODE — by entrypoint after git clone + apply patch + set PYTHONPATH
 # ────────────────────────────────────────────────
 
-info "container: running v5 SFT, RUN_TS=${RUN_TS}, SUBCMD=${SUBCMD}"
+info "container: running fsdp SFT, RUN_TS=${RUN_TS}"
 
-RUN_OUTPUT_DIR="/workspace/output/sft_v5_${RUN_TS}"
+RUN_OUTPUT_DIR="/workspace/output/sft_fsdp_${RUN_TS}"
 mkdir -p "${RUN_OUTPUT_DIR}"
 
 FSDP_OVERRIDE="${RUN_OUTPUT_DIR}/fsdp_override.json"
@@ -359,15 +230,6 @@ else
     BF16_FLAGS=("--bf16" "false" "--fp16" "false")
 fi
 
-# Smoke test: stop after N steps via GEMMA4_STOP_AFTER_STEPS env (read by
-# sitecustomize patch). Bash's syntactic env-prefix `KEY=VAL cmd` only works
-# with literal KEY=VAL, not with variable expansion — so we use `env` to
-# forward the variable into swift sft's environment.
-SMOKE_PREFIX=()
-if [ "${SUBCMD}" = "smoke" ]; then
-    SMOKE_PREFIX=(env "GEMMA4_STOP_AFTER_STEPS=${SMOKE_MAX_STEPS:-5}")
-fi
-
 info "GBS=${GBS} (MBS=${MICRO_BATCH_SIZE} × NPROC=${NPROC_PER_NODE} × GAS=${GRAD_ACCUM_STEPS})"
 info "max_length=${MAX_LEN}, num_epochs=${NUM_EPOCHS}, lr=${LR}"
 info "FSDP_OVERRIDE=${FSDP_OVERRIDE}"
@@ -383,7 +245,7 @@ GEMMA4_FSDP_REDUCE_FP32_NCCL="${GEMMA4_FSDP_REDUCE_FP32_NCCL}" \
 NPROC_PER_NODE="${NPROC_PER_NODE}" \
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES_VAL}" \
 MASTER_PORT="${MASTER_PORT}" \
-"${SMOKE_PREFIX[@]}" swift sft \
+swift sft \
     --model /workspace/model \
     --model_type gemma4 \
     --template gemma4 \

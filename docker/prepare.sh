@@ -219,10 +219,10 @@ elif [ ! -f "${DATASET_PATH}" ]; then
 elif [ ! -d "${MODEL_LOCAL_DIR}" ]; then
     warn "Model dir ${MODEL_LOCAL_DIR} not found — skipping smoke test."
 else
-    ok "Use sft_v5.sh for the 5-step smoke test (it auto-pulls business code):"
+    ok "Use sft_fsdp.sh for the 5-step smoke test (it auto-pulls business code):"
     echo "    DATA_HOST_PATH='${DATASET_PATH}' \\"
     echo "    MODEL_HOST_DIR='${MODEL_LOCAL_DIR}' \\"
-    echo "    bash scripts/gemma4_E4B_opt/sft_v5.sh smoke"
+    echo "    bash scripts/gemma4_E4B_opt/sft_fsdp.sh smoke"
 fi
 
 exit_with_summary 0
