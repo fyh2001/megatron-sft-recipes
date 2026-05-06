@@ -38,6 +38,84 @@
 
 ---
 
+## 0.1 TL;DR — 5 分钟速读
+
+### 整个调试历程的因果链
+
+```
+启动失败 10 次（§4-15）
+  ├─ §4-5  KeyError 0 / cpu_offload 冲突   → 改 fsdp_override.json
+  ├─ §6,9,10 KeyError 22 + lm_head + OOM  → 切机器 + 试错
+  ├─ §11   KeyError 22 真因 = FSDP2 cast_forward_inputs 重建 dict
+  │        → patch (8) module-level cell 解决
+  ├─ §12-13 step 7 OOM / SP=2 失败        → 显存还是不够
+  └─ §15   FSDP2 + 完整 cpu_offload 终于成功，进 training_step
+
+第一次全跑（§16-19）发现 grad_norm 1.29x 高于 DS3
+  └─ §18   真因 = KV-share + AC 双流梯度
+           → patch (8) detach 解决，grad_norm 完全对齐
+
+但 epoch 2 末 loss 比 DS3 高 11%（§19-23）
+  ├─ §20-22 各种实验排除 dataloader / padding_free / 自定义 autograd
+  └─ §24   cossim 实验定位真因 = 早期层方向漂（不是 KV-share，也不是 grad magnitude）
+
+【重大修复】§25 fp32 master 修复
+  └─ FSDP2 默认 bf16 sharded master，optimizer step 累计 bf16 舍入
+     → --torch_dtype float32 --bf16 true（fp32 master + bf16 mp）
+     → mean Δloss 11% → +0.05% / final loss 差 1e-4
+
+提速尝试（§26）全部失败
+  ├─ 21c per-micro RS                 → 慢 65%
+  ├─ 21d cross-group bucket fusion    → 没省内存
+  └─ torch.compile + regional         → grad nan
+     结论：v5 + 36% speedup vs DS3 已经接近最优
+
+最终生产配置 = patch 8/16/21/21b/29/30 + activation_cpu_offload + fp32 master
+```
+
+### 三种读法
+
+| 你是 | 读法 | 时间 |
+|---|---|---|
+| **想用** | `fsdp_user_guide.md` + 本文 §0（最终配置）+ §25（fp32 master 是怎么回事）| 30 min |
+| **想复盘**（5 分钟读完故事）| 上面的因果链 + §0 + §18 + §24 + §25 | 1 h |
+| **想完整复现 / 学习 debug**（按时间顺序）| §1-26 全读 | 1-2 天 |
+
+### 三个里程碑章节（一定要读）
+
+- **§11** — KeyError 22 真因 + module-cell patch（典型 FSDP2 + AC 兼容性教材）
+- **§18** — 1.29x grad_norm 真因（KV-share + AC 双流梯度，layer-by-layer dump 定位）
+- **§24-25** — 11% loss gap 真因（cossim 找早期层方向漂）+ fp32 master 修复
+
+---
+
+## 0.2 错误 → 章节 索引
+
+按你看到的报错 / 现象快速跳转：
+
+| 你看到的报错 / 现象 | 在哪节 | 修法 |
+|---|---|---|
+| `KeyError: 0` 在 `forward` 时 | §4 | 早期 patch 实例属性失败 |
+| `KeyError: 22` 在 `forward` 时 | §6, §11 | patch (8) v2 module-level cell |
+| `cpu_offload + lm_head AttributeError` | §9 | `cpu_ram_efficient_loading=false` |
+| `cuda OOM at step 7 / micro 16` | §10, §12, §15 | 切完整 cpu_offload |
+| **`loss=27` 启动就爆** | §15.x（buffer fix-up）| swift `Gemma4Loader` 手动 reload `layer_scalar` / `std_scale` / `std_bias` |
+| `grad_norm vs DS3 = 1.29x 系统偏差` | §18 | KV-share path `.detach()`（patch 8 detach 模式）|
+| Layers 0-13 grad 偏低 | §20 | 同上（KV-share + AC 双流）|
+| Dataloader 是否对齐 DS3 | §21 | 验证脚本 + ms-swift / DS dataloader 等价 |
+| `padding_free=true` × Gemma-4 shape mismatch | §22 | 设 `padding_free=false`（v5 默认）|
+| **mean Δloss vs DS3 持续 +11%** | §24, §25 | fp32 master fix（CLI: `--torch_dtype float32 --bf16 true`）|
+| epoch 2 loss 不再大幅下降 | §24 | 同上 |
+| 想加速：`patch 21c per-micro RS` 太慢 | §26.2 | 不可行，慢 65% |
+| 想加速：`patch 21d bucket fusion` | §26.3 | 不可行，没省内存 |
+| 想加速：`torch.compile + regional` 出 nan | §26.4 | 不可行，PyTorch 2.10 inductor + KV-share dict 冲突 |
+| GPU 利用率只有 11% TC active | §26.0 | 正常，瓶颈是 PCIe / NCCL，不是计算 |
+| Step time 突然抖到 60-70 s | §26.0, §15 | 一般是数据 reload outlier，p95=41s 才是稳态 |
+
+> 找不到？全文搜你的 error message 关键词（`KeyError 22` / `OOM at` / `Δloss 11%` / `grad_norm 1.29` / `cossim`）。
+
+---
+
 ## 1. 环境与前提
 
 | 项 | 值 |
@@ -1005,25 +1083,45 @@ GEMMA4_KV_SHARE_DETACH=1
 
 ---
 
-## 16. 实测指标（运行结束后填）
+## 16. 实测指标（多个全跑的对比 — 已填）
 
-> ⚠ 这一节的所有数字必须来自实际训练日志（report.json + bench.jsonl + dcgm_tc.tsv + gpu_metrics.jsonl）。**禁止估算**。
+> 本节汇总从 §15 第十次成功开始、到 §25 fp32-master 修复后的 3 次 2-epoch 全跑实测。所有数字来自实际训练日志（`report.json` / `logging.jsonl` / `dcgm_tc.tsv` / `gpu_metrics.jsonl`），未估算。
 
-填表清单（待 §15 run 跑完之后补）：
+### 16.1 三个全跑的关系
 
-- [ ] mean / median / p99 step time (ms)
-- [ ] tokens/s per GPU
-- [ ] achieved TFLOPS / GPU（含全参 6N、active 6N 两版）
-- [ ] MFU% (compute-active)
-- [ ] peak_mem_gb / peak_mem_gib_from_swift_log
-- [ ] avg_gpu_util_pct / avg_power_w / peak_power_w
-- [ ] actual_total_wall_min（含 save 的实际墙上时间）
-- [ ] loss_first_step / loss_last_step / loss curve
-- [ ] grad_norm 曲线（粗略检查训练稳定性）
-- [ ] checkpoint 路径（epoch 1 / epoch 2）
-- [ ] 训练产物大小（save_only_model=true，单 ckpt 应 ≈ 16 GB safetensors）
+| 全跑 | run 目录 | 配置 | 详细在 |
+|---|---|---|---|
+| Run A | `run_20260430_171750_fsdp2_offload_a3_pf_2ep_gbs128/` | v0 native（patch 8 detach 但**无** fp32 master）| **§19** |
+| Run B | `run_20260502_234152_fsdp2_offload_a3_pf_2ep_fp32master/` | fp32-master v0（无 patch 21+21b）| **§25** |
+| Run C | `run_20260503_183255_..._v5_padfree_FALSE_FULL/` | **真 v5**（patch 21+21b+act offload + fp32 master）| **`docs/fsdp_user_guide.md` §4** |
 
-补完之后，把 §15 run 目录加入 git track + commit + push origin。
+### 16.2 三个全跑的关键指标对比
+
+| 指标 | Run A（v0 native）| Run B（fp32 master v0）| **Run C（真 v5，生产）** | DS3 baseline |
+|---|---|---|---|---|
+| mean Δloss vs DS3 | **+11.2%** ❌ | +0.12% ✓ | **+0.044%** ✓✓ | 0 |
+| Final loss epoch 2 | 1.595 (v0) | 1.3913 | **1.3884** | 1.3872 |
+| Final loss diff | +0.161 (+11.2%) | +0.0041 (+0.30%) | **+0.0012 (+0.087%)** | — |
+| Step time mean | 35.4 s/it | 37.8 s/it | **40.3 s/it**（patch 21+21b 多 ~3s）| 54.9 s/it |
+| Speedup vs DS3 | **1.55x** | 1.45x | **1.36x** ✓ | 1.0 |
+| 2-epoch wall time | **7.93 h** | 8.5 h | **9.0 h** | 12.3 h |
+| Peak GPU mem | 79.16 GiB | 77.5 GiB | **73.5 GiB** ✓ | 74.8 GiB |
+
+> **生产用 Run C（真 v5）**——只有它是 patch 21+21b+act_offload+fp32 master 全开的版本，数值最接近 DS3、内存反而最低。
+
+### 16.3 关键里程碑文件
+
+| 物 | 路径 |
+|---|---|
+| v5 全跑 logging.jsonl | `experiments/.../run_20260503_183255_..._v5_padfree_FALSE_FULL/v0-*/logging.jsonl`（808 行）|
+| DS3 baseline logging.jsonl | `baselines/ds3_baseline_logging.jsonl`（同事 zyfncg 全跑结果）|
+| v5 vs DS3 对比图 | `docs/images/compare_ds3_fsdp2_v5_FINAL.png`（6 子图：loss / grad_norm / step time / Δloss / gn ratio / token_acc）|
+| v5 全跑 checkpoints | epoch 1 末 `checkpoint-403/`、epoch 2 末 `checkpoint-806/`（每个 ~16 GB safetensors）|
+
+各跑完整数值（均值 / 中位数 / P50/75/90/95/99 / 阶段对比）见对应章节：
+- Run A：[§19](#19-v0-native-全跑结果含-11-loss-gap25-之前的中间产物--2026-05-01)
+- Run B：[§25](#-25-重大修复-fp32-master-修复--11-loss-gap--005-δloss)
+- Run C：[`docs/fsdp_user_guide.md` §4](fsdp_user_guide.md)
 
 ---
 
@@ -1130,7 +1228,17 @@ scripts/gemma4_E4B_opt/fsdp2_offload_E4B_text_only_2ep_a3_pf.sh
 
 ---
 
-## 19. 最终 2-epoch full run 结果 + 完整复现指南 (2026-05-01)
+## 19. v0-native 全跑结果（含 11% loss gap，§25 之前的中间产物） — 2026-05-01
+
+> **⚠ 重要说明**：本节的"final"数据是当时（2026-05-01）以为的最终结果，实际是 **fp32-master 修复（§25）之前的中间产物**。新人复现时不要用本节当目标，用 §25 / `docs/fsdp_user_guide.md` §4 的 v5 数据：
+>
+> | 阶段 | mean Δloss vs DS3 | Final loss diff | 结论 |
+> |---|---|---|---|
+> | 本节（v0 native，patch 8 detach）| **+11.2%** | +0.161 | 中间产物，不要用 |
+> | §25（v5，fp32 master 修复后）| **+0.044%** | +0.0012 | **最终 v5，生产用** |
+>
+> 本节保留是为了说明"为什么需要 §24 cossim 实验和 §25 fp32 master"——如果跳过本节，§24 那个 11% gap 哪里来的就没了上下文。
+
 
 ### 19.1 Run identity
 
