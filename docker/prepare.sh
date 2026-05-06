@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-IMAGE="${IMAGE:-fangyaohua/gemma4-e4b-it-sft:260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v2}"
+IMAGE="${IMAGE:-fangyaohua/gemma4-e4b-it-sft:runtime-260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-r1}"
 MODEL_LOCAL_DIR="${MODEL_LOCAL_DIR:-$HOME/.cache/modelscope/models/google/gemma-4-E4B-it}"
 MODEL_ID="${MODEL_ID:-google/gemma-4-E4B-it}"
 SKIP_MODEL="${SKIP_MODEL:-0}"
@@ -190,12 +190,13 @@ else
     echo "  Will download via modelscope CLI inside the docker image (~28 GB, ~10-30 min)"
     if ask_yes "Download model now?"; then
         mkdir -p "$(dirname "${MODEL_LOCAL_DIR}")"
+        # New image uses ENTRYPOINT that requires git clone before exec; for
+        # one-shot modelscope CLI we override entrypoint to /bin/bash directly.
         docker run --rm \
+            --entrypoint /bin/bash \
             -v "${HOME}/.cache/modelscope:/root/.cache/modelscope" \
             "${IMAGE}" \
-            modelscope download \
-                --model "${MODEL_ID}" \
-                --local_dir "/root/.cache/modelscope/models/${MODEL_ID}"
+            -c "modelscope download --model '${MODEL_ID}' --local_dir '/root/.cache/modelscope/models/${MODEL_ID}'"
         ok "Downloaded to ${MODEL_LOCAL_DIR}"
     else
         warn "Skipped model download. Set MODEL=/path/to/your/model when running training."
@@ -218,32 +219,10 @@ elif [ ! -f "${DATASET_PATH}" ]; then
 elif [ ! -d "${MODEL_LOCAL_DIR}" ]; then
     warn "Model dir ${MODEL_LOCAL_DIR} not found — skipping smoke test."
 else
-    OUT=$(mktemp -d)
-    echo "  Running 5-step smoke test, output -> ${OUT}"
-    docker run --rm --gpus all --shm-size=16g --ipc=host \
-        -v "${HOME}/.cache/modelscope:/root/.cache/modelscope" \
-        -v "${DATASET_PATH}:/data/sft.jsonl:ro" \
-        -v "${OUT}:/runs" \
-        -e MODEL=/root/.cache/modelscope/models/${MODEL_ID} \
-        -e DATASET_PATH=/data/sft.jsonl \
-        -e OUT_ROOT=/runs/bench \
-        -e LABEL=smoke -e MAX_STEPS=5 -e FULL_SCHED_STOP=1 \
-        -e TEMPLATE=gemma4 -e TORCH_DTYPE=float32 -e WEIGHT_DECAY=0.1 \
-        -e FSDP_WRAP_EXTRA='{"activation_cpu_offload": true}' \
-        -e EXTRA_ENV='GEMMA4_FSDP_WRAP_PLE=1 GEMMA4_KV_SHARE_DETACH=1 GEMMA4_FSDP_REDUCE_FP32_NCCL=1' \
-        -e EXTRA_ARGS='--bf16 true --fp16 false --padding_free false --max_grad_norm 1.0' \
-        "${IMAGE}" \
-        bash /opt/megatron-sft-recipes/scripts/gemma4_E4B_opt/bench_variant.sh
-
-    LJ=$(ls -dt "${OUT}"/bench/run_*_smoke/v0-*/logging.jsonl 2>/dev/null | head -1)
-    if [ -n "${LJ}" ]; then
-        STEP1=$(grep -o '"loss": [0-9.]*, "grad_norm": [0-9.]*' "${LJ}" | head -1 || true)
-        echo "  step 1 metrics: ${STEP1}"
-        # Reference (host v5):  loss ~2.226, grad_norm ~10.29
-        ok "Smoke test finished — see ${OUT}/bench/run_*_smoke/STATUS"
-    else
-        err "Smoke test produced no logging.jsonl — check the docker run output above."
-    fi
+    ok "Use sft_v5.sh for the 5-step smoke test (it auto-pulls business code):"
+    echo "    DATA_HOST_PATH='${DATASET_PATH}' \\"
+    echo "    MODEL_HOST_DIR='${MODEL_LOCAL_DIR}' \\"
+    echo "    bash scripts/gemma4_E4B_opt/sft_v5.sh smoke"
 fi
 
 exit_with_summary 0

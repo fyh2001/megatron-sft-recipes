@@ -1,69 +1,61 @@
-# Gemma-4-E4B-it text-only SFT training image (v5 production stack).
+# Gemma-4-E4B-it text-only SFT runtime image (依赖层).
 #
-# Self-contained runtime: PyTorch 2.10 + CUDA 12.9 + ms-swift 4.2.0.dev0 +
-# all required monkey-patches (sitecustomize.py) + Gemma4Loader buffer fix.
-# No model weights or training data baked in — mount via -v at runtime.
+# 设计哲学：镜像只装"依赖"，业务代码走 git pull。
+#
+#   依赖（在镜像里）:                  业务代码（容器启动时 git clone）:
+#     PyTorch 2.10                      sitecustomize.py (运行时 monkey-patches)
+#     CUDA 12.9                         swift gemma.py buffer-fix patch
+#     ms-swift 4.2.0.dev0 (editable)    sft_v5.sh / bench_variant.sh 等启动脚本
+#     transformers / accelerate         docs/
+#     modelscope CLI                    plot_compare_*.py 等分析工具
+#     git, patch (拉代码工具)
+#     entrypoint.sh
+#
+# 容器启动时 entrypoint.sh 会:
+#   1. 按 CODE_REPO / CODE_REF 拉代码到 /workspace/code
+#   2. apply swift gemma.py buffer-fix patch（幂等）
+#   3. 设 PYTHONPATH 指向 sitecustomize 目录
+#   4. exec 用户命令
+#
+# 这样：依赖升级 → bump 镜像 tag (r1 → r2)；业务代码改 → git push + 改
+# CODE_REF 即可，不需要 rebuild 镜像。
 #
 # Build:
 #   bash docker/build_image.sh
-# Run quickstart:
-#   see docker/README.md
 ARG BASE=modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.9.1-py312-torch2.10.0-vllm0.19.0-modelscope1.35.4-swift4.1.2
 FROM ${BASE}
 
-# 1) Install ms-swift 4.2.0.dev0 as an editable install at /opt/ms-swift,
-# pinned to the fork commit that contains the Gemma4 SDPA fallback fix
-# (b462182d).  The base image ships ms-swift 4.1.2 in site-packages;
-# editable install at /opt/ms-swift takes precedence and is what every
-# script and patch file in this image expects.
+# 1) Install ms-swift 4.2.0.dev0 as editable install at /opt/ms-swift,
+# pinned to a specific commit. The base image ships ms-swift 4.1.2 in
+# site-packages; editable install at /opt/ms-swift takes precedence.
 ARG SWIFT_REPO_URL=https://github.com/fyh2001/ms-swift.git
 ARG SWIFT_REPO_COMMIT=b462182dacb5a6c8369b6dd846fafdb12e9c1cd0
-RUN apt-get update && apt-get install -y --no-install-recommends git \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git patch ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
  && git clone "${SWIFT_REPO_URL}" /opt/ms-swift \
  && cd /opt/ms-swift \
  && git checkout "${SWIFT_REPO_COMMIT}" \
  && pip install --no-deps -e . \
- && pip show ms-swift | grep -E 'Version|Editable' \
  && echo "ms-swift 4.2.0.dev0 editable install at /opt/ms-swift @ ${SWIFT_REPO_COMMIT}"
 
-# 2) Apply the Gemma4Loader buffer fix-up.
-# Without this, transformers 5.x re-initialises layer_scalar / std_scale /
-# std_bias to torch.ones(1), causing loss to explode to ~27-38 at step 1
-# (verified bug in §15 of docs/gemma4_E4B_alt_offload_log.md).
-COPY docker/patches/gemma4_loader_buffer_fix.patch /tmp/gemma4_loader_buffer_fix.patch
-RUN cd /opt/ms-swift \
- && git apply --check /tmp/gemma4_loader_buffer_fix.patch \
- && git apply /tmp/gemma4_loader_buffer_fix.patch \
- && rm /tmp/gemma4_loader_buffer_fix.patch \
- && echo "Gemma4Loader buffer fix applied to /opt/ms-swift"
+# Note: swift gemma.py buffer-fix patch is NOT applied at build time.
+# entrypoint.sh applies it at runtime, sourced from the cloned business code.
+# This way changes to the patch don't require rebuilding the image.
 
-# 3) Copy the v5 training stack into /opt/megatron-sft-recipes/.
-WORKDIR /opt/megatron-sft-recipes
+# 2) Copy entrypoint script (the only "code" baked into the image)
+COPY docker/entrypoint.sh /opt/entrypoint.sh
+RUN chmod +x /opt/entrypoint.sh
 
-# Runtime monkey-patches (loaded via PYTHONPATH at swift sft startup time)
-COPY scripts/gemma4_opt/_sdp_preamble/ scripts/gemma4_opt/_sdp_preamble/
+# 3) Workspace dir (where business code gets cloned at runtime)
+RUN mkdir -p /workspace/code /workspace/output /workspace/logs
+WORKDIR /workspace
 
-# Production launch script + bench harness + alternative variants
-COPY scripts/gemma4_E4B_opt/ scripts/gemma4_E4B_opt/
-
-# Metrics / report helpers used by the launch scripts
-COPY scripts/benchmark/gpu_monitor.py     scripts/benchmark/gpu_monitor.py
-COPY scripts/benchmark/dcgm_scrape.py     scripts/benchmark/dcgm_scrape.py
-COPY scripts/benchmark/report_swift_sp.py scripts/benchmark/report_swift_sp.py
-COPY scripts/benchmark/extract_loss_curve.py scripts/benchmark/extract_loss_curve.py
-
-# Reference docs (full debugging timeline) + image-specific README
-COPY docs/gemma4_E4B_alt_offload_log.md docs/gemma4_E4B_alt_offload_log.md
-COPY docker/README.md README.md
-
-# 4) Default env so the launch script picks the in-image paths.
-# User overrides MODEL / DATASET_PATH / OUT_ROOT at docker run time.
-ENV REPO=/opt/megatron-sft-recipes
-ENV DOCKER_EXEC_WRAP="bash -lc"
-ENV GPU_MONITOR=1 \
-    DCGM_SCRAPE=0 \
+# 4) Default env (entrypoint reads these; user overrides at runtime via -e)
+ENV CODE_REPO=https://github.com/fyh2001/megatron-sft-recipes.git \
+    CODE_REF=v1.0 \
+    CODE_DIR=/workspace/code \
     PYTHONDONTWRITEBYTECODE=1
 
-WORKDIR /opt/megatron-sft-recipes
+ENTRYPOINT ["/opt/entrypoint.sh"]
 CMD ["/bin/bash"]
