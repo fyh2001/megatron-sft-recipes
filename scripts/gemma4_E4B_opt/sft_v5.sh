@@ -355,12 +355,13 @@ else
     BF16_FLAGS=("--bf16" "false" "--fp16" "false")
 fi
 
-# Smoke test: stop after N steps using GEMMA4_STOP_AFTER_STEPS callback.
-# (Must be a string, not array — bash array expansion breaks line-continuation
-# env-assignment syntax used by `swift sft` invocation below.)
-SMOKE_STOP_ENV=""
+# Smoke test: stop after N steps via GEMMA4_STOP_AFTER_STEPS env (read by
+# sitecustomize patch). Bash's syntactic env-prefix `KEY=VAL cmd` only works
+# with literal KEY=VAL, not with variable expansion — so we use `env` to
+# forward the variable into swift sft's environment.
+SMOKE_PREFIX=()
 if [ "${SUBCMD}" = "smoke" ]; then
-    SMOKE_STOP_ENV="GEMMA4_STOP_AFTER_STEPS=${SMOKE_MAX_STEPS:-5}"
+    SMOKE_PREFIX=(env "GEMMA4_STOP_AFTER_STEPS=${SMOKE_MAX_STEPS:-5}")
 fi
 
 info "GBS=${GBS} (MBS=${MICRO_BATCH_SIZE} × NPROC=${NPROC_PER_NODE} × GAS=${GRAD_ACCUM_STEPS})"
@@ -375,11 +376,10 @@ GEMMA4_FORCE_MEM_EFFICIENT_SDP=1 \
 GEMMA4_FSDP_WRAP_PLE="${GEMMA4_FSDP_WRAP_PLE}" \
 GEMMA4_KV_SHARE_DETACH="${GEMMA4_KV_SHARE_DETACH}" \
 GEMMA4_FSDP_REDUCE_FP32_NCCL="${GEMMA4_FSDP_REDUCE_FP32_NCCL}" \
-${SMOKE_STOP_ENV} \
 NPROC_PER_NODE="${NPROC_PER_NODE}" \
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES_VAL}" \
 MASTER_PORT="${MASTER_PORT}" \
-swift sft \
+"${SMOKE_PREFIX[@]}" swift sft \
     --model /workspace/model \
     --model_type gemma4 \
     --template gemma4 \
