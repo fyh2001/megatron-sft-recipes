@@ -68,7 +68,7 @@ echo "Run dir   : ${RUN_DIR}"
 echo "Dataset   : ${DATASET_PATH} (${DATASET_SIZE} samples)"
 echo "Engine    : FSDP2 (full_shard auto_wrap offload), AC=on"
 echo "A3        : GEMMA4_FSDP_WRAP_PLE=1 (PLE separate FSDP unit)"
-echo "Padding   : padding_free=true, packing=false"
+echo "Padding   : padding_free=${PADDING_FREE:-false}, packing=false"
 echo "Precision : torch_dtype=fp32 (master) + bf16 mp (compute)"
 echo "MBS / GAS / SP / DP / GBS : ${MBS} / ${GAS} / ${SP} / $((NPROC/SP)) / ${GBS}"
 echo "Epochs / LR / Warmup     : ${NUM_EPOCHS} / ${LR} / ${WARMUP_RATIO}"
@@ -157,7 +157,7 @@ swift sft \
     --fsdp ${FSDP_OVERRIDE} \
     --sequence_parallel_size ${SP} \
     --packing false \
-    --padding_free ${PADDING_FREE:-true} \
+    --padding_free ${PADDING_FREE:-false} \
     --dataloader_num_workers 4 \
     --dataset_num_proc 4 \
     --logging_steps 1 \

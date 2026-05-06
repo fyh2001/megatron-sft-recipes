@@ -19,9 +19,9 @@ cd "${REPO_ROOT}"
 
 ACCOUNT="${ACCOUNT:-fangyaohua}"
 NAME="${NAME:-gemma4-e4b-it-sft}"
-DATE="${DATE:-$(date +%y%m%d)}"
+DATE="${DATE:-260506}"
 BASE_VERSIONS="${BASE_VERSIONS:-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2}"
-RELEASE="${RELEASE:-v1}"
+RELEASE="${RELEASE:-v2}"
 
 BASE_IMAGE="${BASE_IMAGE:-modelscope-registry.us-west-1.cr.aliyuncs.com/modelscope-repo/modelscope:ubuntu22.04-cuda12.9.1-py312-torch2.10.0-vllm0.19.0-modelscope1.35.4-swift4.1.2}"
 

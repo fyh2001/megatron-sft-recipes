@@ -7,7 +7,7 @@
 #   2) Check NVIDIA driver — print install command if missing (does NOT auto-install)
 #   3) Check docker — print install command if missing
 #   4) Check nvidia-container-toolkit — auto-install (apt) WITH user confirmation
-#   5) docker pull fangyaohua/gemma4-e4b-it-sft:...-v1
+#   5) docker pull fangyaohua/gemma4-e4b-it-sft:...-v2
 #   6) Download model weights via modelscope CLI to $HOME/.cache/modelscope (28 GB)
 #   7) Run a 5-step smoke test (requires --dataset for real data; skipped if missing)
 #
@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-IMAGE="${IMAGE:-fangyaohua/gemma4-e4b-it-sft:260505-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v1}"
+IMAGE="${IMAGE:-fangyaohua/gemma4-e4b-it-sft:260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v2}"
 MODEL_LOCAL_DIR="${MODEL_LOCAL_DIR:-$HOME/.cache/modelscope/models/google/gemma-4-E4B-it}"
 MODEL_ID="${MODEL_ID:-google/gemma-4-E4B-it}"
 SKIP_MODEL="${SKIP_MODEL:-0}"

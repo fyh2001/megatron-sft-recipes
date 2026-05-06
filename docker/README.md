@@ -29,7 +29,7 @@ copy-pastable install command for missing pieces. See
 
 ```bash
 # pull
-docker pull fangyaohua/gemma4-e4b-it-sft:260505-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v1
+docker pull fangyaohua/gemma4-e4b-it-sft:260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-v2
 
 # run a full 2-epoch training (8x H100, ~9 hours)
 docker run --rm -it --gpus all --shm-size=16g --ipc=host \
@@ -39,7 +39,7 @@ docker run --rm -it --gpus all --shm-size=16g --ipc=host \
   -e MODEL=/root/.cache/modelscope/models/google/gemma-4-E4B-it \
   -e DATASET_PATH=/data/SFT.jsonl \
   -e OUT_ROOT=/runs \
-  fangyaohua/gemma4-e4b-it-sft:260505-...-v1 \
+  fangyaohua/gemma4-e4b-it-sft:260506-...-v2 \
   bash /opt/megatron-sft-recipes/scripts/gemma4_E4B_opt/fsdp2_offload_E4B_text_only_2ep_a3_pf_fp32master.sh
 ```
 
@@ -103,7 +103,7 @@ sudo systemctl restart docker
 # inside the image (fastest, no separate modelscope CLI install on host)
 docker run --rm \
   -v $HOME/.cache/modelscope:/root/.cache/modelscope \
-  fangyaohua/gemma4-e4b-it-sft:260505-...-v1 \
+  fangyaohua/gemma4-e4b-it-sft:260506-...-v2 \
   modelscope download \
     --model google/gemma-4-E4B-it \
     --local_dir /root/.cache/modelscope/models/google/gemma-4-E4B-it
@@ -192,7 +192,7 @@ docker run --rm --gpus all --shm-size=16g --ipc=host \
   -e TORCH_DTYPE=float32 \
   -e EXTRA_ENV="GEMMA4_FSDP_WRAP_PLE=1 GEMMA4_KV_SHARE_DETACH=1 GEMMA4_FSDP_REDUCE_FP32_NCCL=1" \
   -e EXTRA_ARGS="--bf16 true --fp16 false --padding_free false --max_grad_norm 1.0" \
-  fangyaohua/gemma4-e4b-it-sft:260505-...-v1 \
+  fangyaohua/gemma4-e4b-it-sft:260506-...-v2 \
   bash /opt/megatron-sft-recipes/scripts/gemma4_E4B_opt/bench_variant.sh
 ```
 
@@ -228,7 +228,7 @@ Full story (and all attempts that *didn't* work) in `/opt/megatron-sft-recipes/d
 
 ```
 fangyaohua/gemma4-e4b-it-sft:<DATE>-<BASE_VERSIONS>-<RELEASE>
-                              260505-u22.04-cu12.9.1-...-v1
+                              260506-u22.04-cu12.9.1-...-v2
 ```
 
 - `DATE` (yymmdd): build date — bump on rebuilds
