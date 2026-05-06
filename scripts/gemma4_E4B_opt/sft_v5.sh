@@ -18,54 +18,54 @@
 set -euo pipefail
 
 # ============================================================
-# [USER CONFIG] —— 必填三项 + 高级 + 内部，按需改
+# [USER CONFIG] —— 直接改这里的值，下面的逻辑一般不用看
 # ============================================================
 
-# ---------- 必填（90% 用户只动这几个）----------
+# ---------- 必填（90% 用户只动这 4 个）----------
 
-IMAGE="${IMAGE:-fangyaohua/gemma4-e4b-it-sft:runtime-260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-r1}"
-MODEL_HOST_DIR="${MODEL_HOST_DIR:-${HOME}/.cache/modelscope/models/google/gemma-4-E4B-it}"
-DATA_HOST_PATH="${DATA_HOST_PATH:-$(pwd)/sft.jsonl}"
-OUTPUT_HOST_DIR="${OUTPUT_HOST_DIR:-$(pwd)/runs}"
+IMAGE="fangyaohua/gemma4-e4b-it-sft:runtime-260506-u22.04-cu12.9.1-py3.12-t2.10.0-v0.19.0-m1.35.4-s4.1.2-r1"
+MODEL_HOST_DIR="${HOME}/.cache/modelscope/models/google/gemma-4-E4B-it"
+DATA_HOST_PATH="$(pwd)/sft.jsonl"
+OUTPUT_HOST_DIR="$(pwd)/runs"
 
 # ---------- 高级（你知道在干嘛再动）----------
 
-NPROC_PER_NODE="${NPROC_PER_NODE:-8}"
-CUDA_VISIBLE_DEVICES_VAL="${CUDA_VISIBLE_DEVICES_VAL:-0,1,2,3,4,5,6,7}"
-MASTER_PORT="${MASTER_PORT:-29501}"
+NPROC_PER_NODE=8
+CUDA_VISIBLE_DEVICES_VAL=0,1,2,3,4,5,6,7
+MASTER_PORT=29501
 
-NUM_EPOCHS="${NUM_EPOCHS:-2}"
-LR="${LR:-2e-5}"
-WARMUP_RATIO="${WARMUP_RATIO:-0.05}"
-WEIGHT_DECAY="${WEIGHT_DECAY:-0.1}"
-MICRO_BATCH_SIZE="${MICRO_BATCH_SIZE:-1}"
-GRAD_ACCUM_STEPS="${GRAD_ACCUM_STEPS:-16}"        # GBS = NPROC × MBS × GAS = 128
-MAX_LEN="${MAX_LEN:-16384}"
-SAVE_STRATEGY="${SAVE_STRATEGY:-epoch}"           # epoch / steps / no
-SAVE_TOTAL_LIMIT="${SAVE_TOTAL_LIMIT:-3}"
-SEED="${SEED:-42}"
-DATA_SEED="${DATA_SEED:-42}"
+NUM_EPOCHS=2
+LR=2e-5
+WARMUP_RATIO=0.05
+WEIGHT_DECAY=0.1
+MICRO_BATCH_SIZE=1
+GRAD_ACCUM_STEPS=16                  # GBS = NPROC × MBS × GAS = 128
+MAX_LEN=16384
+SAVE_STRATEGY=epoch                  # epoch / steps / no
+SAVE_TOTAL_LIMIT=3
+SEED=42
+DATA_SEED=42
 
-SHM_SIZE="${SHM_SIZE:-16g}"
-IPC_MODE="${IPC_MODE:-host}"
-RUN_IN_BACKGROUND="${RUN_IN_BACKGROUND:-true}"
+SHM_SIZE=16g
+IPC_MODE=host
+RUN_IN_BACKGROUND=true
 
 # ---------- 业务代码版本（默认拉 v1.0 tag）----------
 
-CODE_REPO="${CODE_REPO:-https://github.com/fyh2001/megatron-sft-recipes.git}"
-CODE_REF="${CODE_REF:-v1.0}"
+CODE_REPO="https://github.com/fyh2001/megatron-sft-recipes.git"
+CODE_REF=v1.0
 
 # ---------- v5 内部（强烈不建议改）----------
 
-TORCH_DTYPE="${TORCH_DTYPE:-float32}"             # fp32 master
-USE_BF16_MP="${USE_BF16_MP:-true}"                # bf16 mixed precision compute
-PADDING_FREE="${PADDING_FREE:-false}"             # Gemma-4 必须 false (§22)
-USE_LIGER_KERNEL="${USE_LIGER_KERNEL:-true}"
-ACTIVATION_CHECKPOINTING="${ACTIVATION_CHECKPOINTING:-true}"
-ACTIVATION_CPU_OFFLOAD="${ACTIVATION_CPU_OFFLOAD:-true}"  # patch 21b 需要
-GEMMA4_FSDP_WRAP_PLE="${GEMMA4_FSDP_WRAP_PLE:-1}"
-GEMMA4_KV_SHARE_DETACH="${GEMMA4_KV_SHARE_DETACH:-1}"
-GEMMA4_FSDP_REDUCE_FP32_NCCL="${GEMMA4_FSDP_REDUCE_FP32_NCCL:-1}"
+TORCH_DTYPE=float32                  # fp32 master
+USE_BF16_MP=true                     # bf16 mixed precision compute
+PADDING_FREE=false                   # Gemma-4 必须 false (§22)
+USE_LIGER_KERNEL=true
+ACTIVATION_CHECKPOINTING=true
+ACTIVATION_CPU_OFFLOAD=true          # patch 21b 需要
+GEMMA4_FSDP_WRAP_PLE=1
+GEMMA4_KV_SHARE_DETACH=1
+GEMMA4_FSDP_REDUCE_FP32_NCCL=1
 
 # ============================================================
 # [INTERNAL] —— 下面是逻辑，一般不用改
@@ -100,13 +100,17 @@ Subcommand:
   --dry-run     仅打印 docker run 命令，不执行
   --help, -h    本帮助
 
-env override（例）:
-  MODEL_HOST_DIR=/path/to/model bash sft_v5.sh
-  NUM_EPOCHS=1 LR=1e-5 bash sft_v5.sh
-  CODE_REF=main bash sft_v5.sh                # 拉 main 而非 v1.0
-  CODE_REPO=https://gitlab.example.com/... bash sft_v5.sh
+配置:
+  直接编辑脚本顶部的 [USER CONFIG] 段（CONFIG 都是字面赋值，
+  非 env override 风格，编辑更直观）。
 
-完整配置见脚本顶部 [USER CONFIG] 段。
+  常见改动:
+    MODEL_HOST_DIR="..."      模型权重 host 路径
+    DATA_HOST_PATH="..."      训练数据 jsonl host 路径
+    OUTPUT_HOST_DIR="..."     输出根目录
+    NUM_EPOCHS=2              epoch 数
+    LR=2e-5                   学习率
+    CODE_REF=v1.0             业务代码版本（可改成 main / commit hash）
 EOF
 }
 

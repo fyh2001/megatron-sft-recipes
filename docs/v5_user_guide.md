@@ -46,21 +46,13 @@
 wget https://raw.githubusercontent.com/fyh2001/megatron-sft-recipes/v1.0/scripts/gemma4_E4B_opt/sft_v5.sh
 chmod +x sft_v5.sh
 
-# 编辑文件顶部 [USER CONFIG]，填三项：
-#   MODEL_HOST_DIR        模型权重路径（host）
-#   DATA_HOST_PATH        训练 jsonl 路径（host）
-#   OUTPUT_HOST_DIR       checkpoints 输出路径（host）
+# 编辑文件顶部 [USER CONFIG]，把这三项的默认值改成你的真实路径：
+#   MODEL_HOST_DIR="${HOME}/.cache/modelscope/models/google/gemma-4-E4B-it"
+#   DATA_HOST_PATH="$(pwd)/sft.jsonl"
+#   OUTPUT_HOST_DIR="$(pwd)/runs"
+vim sft_v5.sh
 
 bash sft_v5.sh                  # 默认 train，2 epoch ~9h on 8x H100
-```
-
-或者用 env override（CI / 批量实验）：
-
-```bash
-MODEL_HOST_DIR=/data/models/gemma-4-E4B-it \
-DATA_HOST_PATH=/data/sft.jsonl \
-OUTPUT_HOST_DIR=$(pwd)/runs \
-bash sft_v5.sh
 ```
 
 启动后会在 `runs/sft_v5_<timestamp>/` 下产出 checkpoints + logs，你可以：
@@ -154,8 +146,10 @@ chmod +x sft_v5.sh
 
 ### 2.8（可选）跑 5 步 smoke test 验证
 
+编辑 `sft_v5.sh` 顶部 `DATA_HOST_PATH` 改成你的 jsonl 路径，然后：
+
 ```bash
-DATA_HOST_PATH=/home/ubuntu/data/SFT.jsonl bash sft_v5.sh smoke
+bash sft_v5.sh smoke
 ```
 
 容器内 entrypoint 会自动 git clone v1.0 的代码 + apply swift 的 patch，然后跑 5 步。step 1 应该输出 `loss=2.226 grad_norm=10.28`。
@@ -178,7 +172,7 @@ DATA_HOST_PATH=/home/ubuntu/data/SFT.jsonl bash sft_v5.sh smoke
 | `bash sft_v5.sh --dry-run` | 仅打印 docker run 命令，不执行（调试用）|
 | `bash sft_v5.sh --help` | 帮助 |
 
-### 3.2 配置（在脚本顶部 `[USER CONFIG]` 段，或 env override）
+### 3.2 配置（直接在脚本顶部 `[USER CONFIG]` 段编辑）
 
 #### 3.2.1 必填 3 项（90% 用户只动这几个）
 
